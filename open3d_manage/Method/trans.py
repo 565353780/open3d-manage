@@ -1,12 +1,13 @@
 import os
 import open3d as o3d
 
-from open3d_manage.Method.io import loadMesh, saveMesh
+from open3d_manage.Method.io import loadGeometry, saveGeometry
 from open3d_manage.Method.path import removeFile
 
 
 def toPLY(
-    mesh_file_path: str,
+    geometry_file_path: str,
+    geometry_type: str,
     save_ply_file_path: str,
     overwrite: bool = False,
     print_progress: bool = False,
@@ -26,16 +27,16 @@ def toPLY(
         print("\t save_ply_file_path:", save_ply_file_path)
         return False
 
-    mesh = loadMesh(mesh_file_path, print_progress)
+    geometry = loadGeometry(geometry_file_path, geometry_type, print_progress)
 
-    if mesh is None:
+    if geometry is None:
         print("[ERROR][trans::toPLY]")
-        print("\t loadMesh failed!")
+        print("\t loadGeometry failed!")
         return False
 
-    if not saveMesh(save_ply_file_path, mesh, print_progress):
+    if not saveGeometry(save_ply_file_path, geometry, print_progress):
         print("[ERROR][trans::toPLY]")
-        print("\t saveMesh failed!")
+        print("\t saveGeometry failed!")
         return False
 
     return True
