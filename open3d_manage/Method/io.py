@@ -3,7 +3,7 @@ import open3d as o3d
 from typing import Union
 
 from open3d_manage.Config.type import VALID_TYPES
-from open3d_manage.Method.path import createFileFolder, renameFile
+from open3d_manage.Method.path import createFileFolder, renameFile, removeFile
 
 
 def loadGeometry(
@@ -37,8 +37,18 @@ def loadGeometry(
 def saveGeometry(
     save_geometry_file_path: str,
     geometry: Union[o3d.geometry.TriangleMesh, o3d.geometry.PointCloud],
+    overwrite: bool = False,
     print_progress: bool = False,
 ) -> bool:
+    if os.path.exists(save_geometry_file_path):
+        if overwrite:
+            removeFile(save_geometry_file_path)
+        else:
+            print("[ERROR][io::saveGeometry]")
+            print("\t save geometry file already exist!")
+            print("\t save_geometry_file_path:", save_geometry_file_path)
+            return False
+
     createFileFolder(save_geometry_file_path)
 
     tmp_save_geometry_file_path = (
