@@ -9,7 +9,7 @@ def demo():
     ply_file_path = "./output/airplane.ply"
 
     sample_point_num = 1000000
-    pcd_file_path = "./output/airplane.pcd"
+    pcd_file_path = "./output/airplane_pcd.ply"
 
     gauss_mean = 100.0
     gauss_sigma = 100.0
@@ -18,7 +18,7 @@ def demo():
         + str(gauss_mean)
         + "_"
         + str(gauss_sigma)
-        + ".pcd"
+        + "_pcd.ply"
     )
 
     overwrite = False

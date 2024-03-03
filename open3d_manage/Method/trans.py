@@ -54,7 +54,7 @@ def toPCDFile(
             print("\t save_pcd_file_path:", save_pcd_file_path)
             return False
 
-    if save_pcd_file_path[-4:] != ".pcd":
+    if save_pcd_file_path[-4:] not in [".pcd", ".ply"]:
         print("[ERROR][trans::toPCDFile]")
         print("\t save pcd file have wrong extension!")
         print("\t save_pcd_file_path:", save_pcd_file_path)
@@ -101,7 +101,7 @@ def toGaussNoisePCDFile(
             print("\t save_pcd_file_path:", save_pcd_file_path)
             return False
 
-    if save_pcd_file_path[-4:] != ".pcd":
+    if save_pcd_file_path[-4:] not in [".pcd", ".ply"]:
         print("[ERROR][trans::toGaussNoisePCDFile]")
         print("\t save pcd file have wrong extension!")
         print("\t save_pcd_file_path:", save_pcd_file_path)
