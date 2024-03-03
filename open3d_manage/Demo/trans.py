@@ -37,17 +37,39 @@ def demo():
         print_progress,
     )
 
-    toGaussNoisePCDFile(
-        pcd_file_path,
-        gauss_mean,
-        gauss_sigma,
-        gauss_noise_pcd_file_path,
-        overwrite,
-        print_progress,
-    )
+    if False:
+        toGaussNoisePCDFile(
+            pcd_file_path,
+            gauss_mean,
+            gauss_sigma,
+            gauss_noise_pcd_file_path,
+            overwrite,
+            print_progress,
+        )
 
-    gauss_noise_pcd = loadGeometry(
-        gauss_noise_pcd_file_path, "pcd", print_progress)
+        gauss_noise_pcd = loadGeometry(
+            gauss_noise_pcd_file_path, "pcd", print_progress)
 
-    renderGeometries(gauss_noise_pcd, "gauss noise airplane")
+        renderGeometries(gauss_noise_pcd, "gauss noise airplane")
+
+    if True:
+        for noise_params in [[0.1, 0.1], [1.0, 1.0], [10.0, 10.0], [100.0, 100.0]]:
+            gauss_mean, gauss_sigma = noise_params
+
+            gauss_noise_pcd_file_path = (
+                "./output/airplane_gauss_noise_"
+                + str(gauss_mean)
+                + "_"
+                + str(gauss_sigma)
+                + "_pcd.ply"
+            )
+
+            toGaussNoisePCDFile(
+                pcd_file_path,
+                gauss_mean,
+                gauss_sigma,
+                gauss_noise_pcd_file_path,
+                overwrite,
+                print_progress,
+            )
     return True
