@@ -14,10 +14,9 @@ def demo():
     gauss_mean = 100.0
     gauss_sigma = 100.0
     gauss_noise_pcd_file_path = (
-        "./output/airplane_gauss_noise_"
-        + str(gauss_mean)
-        + "_"
-        + str(gauss_sigma)
+        "./output/airplane"
+        + "_gaussMean-" str(gauss_mean)
+        + "_gaussSigma-" + str(gauss_sigma)
         + "_pcd.ply"
     )
 
@@ -57,10 +56,9 @@ def demo():
             gauss_mean, gauss_sigma = noise_params
 
             gauss_noise_pcd_file_path = (
-                "./output/airplane_gauss_noise_"
-                + str(gauss_mean)
-                + "_"
-                + str(gauss_sigma)
+                "./output/airplane"
+                + "_gaussMean-" str(gauss_mean)
+                + "_gaussSigma-" + str(gauss_sigma)
                 + "_pcd.ply"
             )
 
