@@ -4,8 +4,6 @@ from tqdm import tqdm
 from typing import Union
 from copy import deepcopy
 
-from open3d_manage.Method.render import visualize_curvature
-
 
 def bilateral_filter(
     pcd: o3d.geometry.PointCloud,
