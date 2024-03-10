@@ -4,19 +4,24 @@ from open3d_manage.Method.render import renderGeometries
 
 
 def demo():
+    noise_save_folder_path = "../output_noise_pcd/"
+
     geometry_file_path = "/Users/fufu/Downloads/Airplane without texture.stl/Airplane without texture.stl"
     geometry_type = "mesh"
-    ply_file_path = "./output/airplane.ply"
+    ply_file_path = noise_save_folder_path + "airplane.ply"
 
-    sample_point_num = 1000000
-    pcd_file_path = "./output/airplane_pcd.ply"
+    sample_point_num = 100000
+    pcd_file_path = noise_save_folder_path + "airplane_pcd.ply"
 
     gauss_mean = 100.0
     gauss_sigma = 100.0
     gauss_noise_pcd_file_path = (
-        "./output/airplane"
-        + "_gaussMean-" str(gauss_mean)
-        + "_gaussSigma-" + str(gauss_sigma)
+        noise_save_folder_path
+        + "airplane"
+        + "_gaussMean-"
+        + str(gauss_mean)
+        + "_gaussSigma-"
+        + str(gauss_sigma)
         + "_pcd.ply"
     )
 
@@ -46,8 +51,7 @@ def demo():
             print_progress,
         )
 
-        gauss_noise_pcd = loadGeometry(
-            gauss_noise_pcd_file_path, "pcd", print_progress)
+        gauss_noise_pcd = loadGeometry(gauss_noise_pcd_file_path, "pcd", print_progress)
 
         renderGeometries(gauss_noise_pcd, "gauss noise airplane")
 
@@ -56,9 +60,12 @@ def demo():
             gauss_mean, gauss_sigma = noise_params
 
             gauss_noise_pcd_file_path = (
-                "./output/airplane"
-                + "_gaussMean-" str(gauss_mean)
-                + "_gaussSigma-" + str(gauss_sigma)
+                noise_save_folder_path
+                + "airplane"
+                + "_gaussMean-"
+                + str(gauss_mean)
+                + "_gaussSigma-"
+                + str(gauss_sigma)
                 + "_pcd.ply"
             )
 
