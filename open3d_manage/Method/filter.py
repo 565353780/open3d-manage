@@ -1,12 +1,10 @@
 import numpy as np
 import open3d as o3d
 from tqdm import tqdm
+from typing import Union
 from copy import deepcopy
 
-from open3d_manage.Method.curvature import (
-    estimate_curvature_eig,
-    estimate_curvature_fit,
-)
+from open3d_manage.Method.render import visualize_curvature
 
 
 def bilateral_filter(
@@ -14,7 +12,7 @@ def bilateral_filter(
     sigma_d: float,
     sigma_n: float,
     knn_num: int,
-    curvature_weight_filter: bool = False,
+    curvatures: Union[np.ndarray, None] = None,
     print_progress: bool = False,
 ):
     """by Junyi Liu"""
@@ -30,11 +28,11 @@ def bilateral_filter(
 
     points = np.asarray(filter_pcd.points)
     normals = np.asarray(filter_pcd.normals)
-    curvatures = np.ones_like(points)
+    if curvatures is None:
+        curvatures = np.ones_like(points)
 
-    if curvature_weight_filter:
-        # 计算曲率
-        curvatures = np.abs(estimate_curvature_fit(filter_pcd, knn_num, print_progress))
+    curvatures_weights = 1.0 / (curvatures + 1e-6)
+    curvatures_weights /= np.max(curvatures_weights)
 
     for_data = range(points.shape[0])
     if print_progress:
@@ -63,12 +61,15 @@ def bilateral_filter(
             sum_weight += weight
             sum_lambda += weight * normal_dot
 
+        # FIXME: here sum weight may be 0 because
+        # -(distance**2) / (2 * sigma_d**2)
+        # is too small! e.g. -9000
+        if sum_lambda == 0 or sum_weight == 0:
+            continue
+
         # 更新点云
         filter_pcd.points[point_idx] += (
-            sum_lambda
-            / sum_weight
-            * normals[point_idx]
-            * np.exp(-1 / curvatures[point_idx])
+            sum_lambda / sum_weight * normals[point_idx] * curvatures_weights[point_idx]
         )
 
     return filter_pcd

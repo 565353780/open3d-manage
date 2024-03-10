@@ -1,7 +1,11 @@
 from open3d_manage.Method.io import loadGeometry
+from open3d_manage.Method.curvature import (
+    estimate_curvature_eig,
+    estimate_curvature_fit,
+)
 from open3d_manage.Method.filter import bilateral_filter
 from open3d_manage.Metric.chamfer import chamferDistance
-from open3d_manage.Method.render import renderGeometries
+from open3d_manage.Method.render import renderGeometries, visualize_curvature
 
 pcd_path_dict = {
     "plane_noise-liu_win": "D:\\Program Files\\dev_for_python\\data\\plane_noise.pcd",
@@ -15,7 +19,6 @@ def demo():
     sigma_d = 0.2
     sigma_n = 10
     knn_num = 30
-    curvature_weight_filter = True
     print_progress = True
 
     noise_pcd_file_path = pcd_path_dict["plane_noise-li_mac"]
@@ -32,9 +35,12 @@ def demo():
     gt_pcd = loadGeometry(gt_pcd_file_path, "pcd", print_progress)
     assert gt_pcd is not None
 
+    print("start estimate curvature by fit...")
+    curvatures = estimate_curvature_fit(noise_pcd, knn_num, print_progress)
+
     print("start bilateral_filter...")
     filter_pcd = bilateral_filter(
-        noise_pcd, sigma_d, sigma_n, knn_num, curvature_weight_filter, print_progress
+        noise_pcd, sigma_d, sigma_n, knn_num, curvatures, print_progress
     )
 
     print("start chamferDistance...")
@@ -51,9 +57,11 @@ def demo():
         + str(chamfer_distance)
     )
 
-    noise_pcd.translate([10, 0, 0])
+    visualize_curvature(noise_pcd, curvatures)
 
-    filter_pcd.translate([20, 0, 0])
+    noise_pcd.translate([0, 0, 3000])
+
+    filter_pcd.translate([0, 0, 6000])
 
     renderGeometries([gt_pcd, noise_pcd, filter_pcd], window_name)
     return True

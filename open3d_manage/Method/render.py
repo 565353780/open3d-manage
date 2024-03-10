@@ -13,16 +13,17 @@ def renderGeometries(geometries, window_name: str = "Open3D Renderer") -> bool:
 
 def visualize_curvature(pcd: o3d.geometry.PointCloud, curvatures: np.ndarray) -> bool:
     """by Junyi Liu"""
-    # min = abs(curvature).min()*1.1
-    # max = abs(curvature).max()*0.9
-    min = 0
-    max = 10000
-
     render_pcd = deepcopy(pcd)
 
     point_num = np.asarray(render_pcd.points).shape[0]
 
     abs_curvatures = np.abs(curvatures)
+
+    min = np.min(abs_curvatures)
+    max = np.max(abs_curvatures)
+    print("curvatures range:", min, max)
+    min = 0
+    max = 10000
 
     curvature_colors = np.zeros((point_num, 3))
 
