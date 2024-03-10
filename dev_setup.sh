@@ -1,1 +1,1 @@
-pip install open3d numpy
+pip install open3d numpy tqdm
