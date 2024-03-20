@@ -69,7 +69,7 @@ def estimate_curvature_fit(
         rxy = np.array([0.0, 0.0, x[1]]).astype(float)
         ryy = np.array([0.0, 0.0, 2.0 * x[2]]).astype(float)
 
-        k1 = np.linalg.norm(rx) * np.linalg.norm(ry) - np.dot(rx, ry) ** 2
+        k1 = np.linalg.norm(rx)**2 * np.linalg.norm(ry)**2 - np.dot(rx, ry) ** 2 #修改了第一基本形式中的E和G为norm平方
         n = np.cross(rx, ry) / np.linalg.norm(np.cross(rx, ry))
         k2 = np.dot(rxx, n) * np.dot(ryy, n) - np.dot(rxy, n) ** 2
 

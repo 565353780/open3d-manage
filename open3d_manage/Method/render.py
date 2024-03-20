@@ -10,6 +10,36 @@ def renderGeometries(geometries, window_name: str = "Open3D Renderer") -> bool:
     o3d.visualization.draw_geometries(geometries, window_name=window_name)
     return True
 
+def toFilterWeights(curvatures):
+    # for i in range(30):
+    #     std = np.std(curvatures)
+    #     mean = np.mean(curvatures)
+    #     print(f"std:{std}, mean:{mean}")
+
+    #     dlimit = mean - 3 * std
+    #     ulimit = mean + 3 * std
+
+    #     curvatures = np.where(curvatures < dlimit, 0, curvatures)
+    #     curvatures = np.where(curvatures > ulimit, ulimit, curvatures)
+    # mean = np.mean(curvatures)
+    # weights = np.ones_like(curvatures)
+    # weights = np.where(curvatures >= mean, np.exp(-(curvatures-mean)**2/mean**2), weights)
+
+    # -----------------箱线剔除离群点--------------------------
+    Q1 = np.percentile(curvatures, 25)
+    Q3 = np.percentile(curvatures, 75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    curvatures = np.where(curvatures < lower_bound, 0, curvatures)
+    curvatures = np.where(curvatures > upper_bound, upper_bound, curvatures)
+    mean = np.mean(curvatures)
+    weights = np.ones_like(curvatures)
+    weights = np.where(curvatures >= mean, np.exp(-(curvatures-mean)**2/mean**2), weights)
+
+    std = np.std(curvatures)
+    print(f"std:{std}, mean:{mean}")
+    return weights
 
 def visualize_curvature(pcd: o3d.geometry.PointCloud, curvatures: np.ndarray) -> bool:
     """by Junyi Liu"""
@@ -19,18 +49,18 @@ def visualize_curvature(pcd: o3d.geometry.PointCloud, curvatures: np.ndarray) ->
 
     abs_curvatures = np.abs(curvatures)
 
-    min = np.min(abs_curvatures)
-    max = np.max(abs_curvatures)
-    print("curvatures range:", min, max)
-    min = 0
-    max = 10000
+    weights = toFilterWeights(abs_curvatures)
+
+    # min = np.min(weights)
+    # max = np.max(weights)
 
     curvature_colors = np.zeros((point_num, 3))
 
     for point_idx in range(point_num):
         # colormap
-        abs_curvature_value = abs_curvatures[point_idx]
-        ratio = (abs_curvature_value - min) / (max - min)
+        # weight = weights[point_idx]
+        # ratio = (weight - min) / (max - min)
+        ratio = 1 - weights[point_idx]
 
         if 0 <= ratio < 0.25:
             curvature_colors[point_idx] = [0, ratio * 4, 1]
@@ -46,4 +76,5 @@ def visualize_curvature(pcd: o3d.geometry.PointCloud, curvatures: np.ndarray) ->
     render_pcd.colors = o3d.utility.Vector3dVector(curvature_colors)
 
     renderGeometries(render_pcd, "curvature")
+    o3d.io.write_point_cloud("D:\\Program Files\\dev_for_python\\data\\result\\fit_curvature_knn=15.pcd", render_pcd)
     return True

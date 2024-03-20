@@ -10,7 +10,7 @@ def bilateral_filter(
     sigma_d: float,
     sigma_n: float,
     knn_num: int,
-    curvatures: Union[np.ndarray, None] = None,
+    curvatures_weight: Union[np.ndarray, None] = None,
     print_progress: bool = False,
 ):
     """by Junyi Liu"""
@@ -26,11 +26,9 @@ def bilateral_filter(
 
     points = np.asarray(filter_pcd.points)
     normals = np.asarray(filter_pcd.normals)
-    if curvatures is None:
-        curvatures = np.ones_like(points)
+    if curvatures_weight is None:
+        curvatures_weight = np.ones_like(points)
 
-    curvatures_weights = 1.0 / (curvatures + 1e-6)
-    curvatures_weights /= np.max(curvatures_weights)
 
     for_data = range(points.shape[0])
     if print_progress:
@@ -67,7 +65,7 @@ def bilateral_filter(
 
         # 更新点云
         filter_pcd.points[point_idx] += (
-            sum_lambda / sum_weight * normals[point_idx] * curvatures_weights[point_idx]
+            sum_lambda / sum_weight * normals[point_idx] * curvatures_weight[point_idx]
         )
 
     return filter_pcd
