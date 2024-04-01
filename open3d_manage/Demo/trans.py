@@ -4,7 +4,7 @@ from open3d_manage.Method.render import renderGeometries
 
 
 def demo():
-    noise_save_folder_path = "../output_noise_pcd/"
+    noise_save_folder_path = "./output/input_pcd/"
 
     geometry_file_path = "/Users/fufu/Downloads/Airplane without texture.stl/Airplane without texture.stl"
     geometry_type = "mesh"
@@ -56,7 +56,15 @@ def demo():
         renderGeometries(gauss_noise_pcd, "gauss noise airplane")
 
     if True:
-        for noise_params in [[0.1, 0.1], [1.0, 1.0], [10.0, 10.0], [100.0, 100.0]]:
+        for noise_params in [
+            [0.1, 0.1],
+            [1.0, 1.0],
+            [10.0, 10.0],
+            [100.0, 100.0],
+            [200.0, 200.0],
+            [300.0, 300.0],
+            [400.0, 400.0],
+        ]:
             gauss_mean, gauss_sigma = noise_params
 
             gauss_noise_pcd_file_path = (
