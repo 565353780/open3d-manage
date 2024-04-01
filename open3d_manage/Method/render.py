@@ -1,5 +1,6 @@
 import numpy as np
 import open3d as o3d
+import plotly.graph_objs as go
 from copy import deepcopy
 
 
@@ -9,6 +10,7 @@ def renderGeometries(geometries, window_name: str = "Open3D Renderer") -> bool:
 
     o3d.visualization.draw_geometries(geometries, window_name=window_name)
     return True
+
 
 def toFilterWeights(curvatures):
     # for i in range(30):
@@ -35,11 +37,14 @@ def toFilterWeights(curvatures):
     curvatures = np.where(curvatures > upper_bound, upper_bound, curvatures)
     mean = np.mean(curvatures)
     weights = np.ones_like(curvatures)
-    weights = np.where(curvatures >= mean, np.exp(-(curvatures-mean)**2/mean**2), weights)
+    weights = np.where(
+        curvatures >= mean, np.exp(-((curvatures - mean) ** 2) / mean**2), weights
+    )
 
     std = np.std(curvatures)
     print(f"std:{std}, mean:{mean}")
     return weights
+
 
 def visualize_curvature(pcd: o3d.geometry.PointCloud, curvatures: np.ndarray) -> bool:
     """by Junyi Liu"""
@@ -76,5 +81,51 @@ def visualize_curvature(pcd: o3d.geometry.PointCloud, curvatures: np.ndarray) ->
     render_pcd.colors = o3d.utility.Vector3dVector(curvature_colors)
 
     renderGeometries(render_pcd, "curvature")
-    o3d.io.write_point_cloud("D:\\Program Files\\dev_for_python\\data\\result\\fit_curvature_knn=15.pcd", render_pcd)
+    o3d.io.write_point_cloud(
+        "D:\\Program Files\\dev_for_python\\data\\result\\fit_curvature_knn=15.pcd",
+        render_pcd,
+    )
     return True
+
+
+def toPlotFigure(points: np.ndarray):
+    trace = go.Scatter3d(
+        x=points[:, 0],
+        y=points[:, 1],
+        z=points[:, 2],
+        mode="markers",
+        marker=dict(size=2),
+    )
+
+    layout = go.Layout(
+        scene=dict(
+            xaxis=dict(
+                title="",
+                showgrid=False,
+                zeroline=False,
+                showline=False,
+                ticks="",
+                showticklabels=False,
+            ),
+            yaxis=dict(
+                title="",
+                showgrid=False,
+                zeroline=False,
+                showline=False,
+                ticks="",
+                showticklabels=False,
+            ),
+            zaxis=dict(
+                title="",
+                showgrid=False,
+                zeroline=False,
+                showline=False,
+                ticks="",
+                showticklabels=False,
+            ),
+        ),
+        margin=dict(l=0, r=0, b=0, t=0),
+        showlegend=False,
+    )
+
+    return go.Figure(data=[trace], layout=layout)
