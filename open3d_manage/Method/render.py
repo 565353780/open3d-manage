@@ -41,8 +41,6 @@ def toFilterWeights(curvatures):
         curvatures >= mean, np.exp(-((curvatures - mean) ** 2) / mean**2), weights
     )
 
-    std = np.std(curvatures)
-    print(f"std:{std}, mean:{mean}")
     return weights
 
 
@@ -81,10 +79,6 @@ def visualize_curvature(pcd: o3d.geometry.PointCloud, curvatures: np.ndarray) ->
     render_pcd.colors = o3d.utility.Vector3dVector(curvature_colors)
 
     renderGeometries(render_pcd, "curvature")
-    o3d.io.write_point_cloud(
-        "D:\\Program Files\\dev_for_python\\data\\result\\fit_curvature_knn=15.pcd",
-        render_pcd,
-    )
     return True
 
 

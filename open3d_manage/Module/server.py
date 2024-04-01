@@ -26,7 +26,8 @@ def toDenoisedPcd(
     input_pcd_file_path: str,
     sigma_d: float,
     sigma_n: int,
-    knn_num: int,
+    curvature_knn_num: int,
+    filter_knn_num: int,
 ):
     print("input_pcd_file_path:", input_pcd_file_path)
     if not os.path.exists(input_pcd_file_path):
@@ -46,12 +47,12 @@ def toDenoisedPcd(
         print_progress,
     )
 
-    curvatures = estimate_curvature_fit(noise_pcd, knn_num, print_progress)
+    curvatures = estimate_curvature_fit(noise_pcd, curvature_knn_num, print_progress)
     weights = toFilterWeights(abs(curvatures))
 
     print("start bilateral_filter...")
     filter_pcd = bilateral_filter(
-        noise_pcd, sigma_d, sigma_n, 120, weights, print_progress
+        noise_pcd, sigma_d, sigma_n, filter_knn_num, weights, print_progress
     )
 
     saveGeometry(save_pcd_file_path, filter_pcd, overwrite, print_progress)
@@ -101,14 +102,22 @@ class Server(object):
                 visual_denoise_plot = gr.Plot()
 
             with gr.Accordion(label="Filter Params", open=False):
-                sigma_d = gr.Slider(0.1, 1.0, value=0.2, step=0.1, label="sigma_d")
-                sigma_n = gr.Slider(1, 20, value=10, step=1, label="sigma_n")
-                knn_num = gr.Slider(1, 100, value=30, step=1, label="knn_num")
+                sigma_d = gr.Slider(0.1, 1000.0, value=200.0, step=0.1, label="sigma_d")
+                sigma_n = gr.Slider(
+                    1.0, 2000.0, value=2000.0, step=0.1, label="sigma_n"
+                )
+                curvature_knn_num = gr.Slider(
+                    1, 200, value=10, step=1, label="curvature_knn_num"
+                )
+                filter_knn_num = gr.Slider(
+                    1, 200, value=40, step=1, label="filter_knn_num"
+                )
 
             filter_params = [
                 sigma_d,
                 sigma_n,
-                knn_num,
+                curvature_knn_num,
+                filter_knn_num,
             ]
 
             submit_button.click(

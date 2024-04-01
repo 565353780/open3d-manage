@@ -29,7 +29,6 @@ def bilateral_filter(
     if curvatures_weight is None:
         curvatures_weight = np.ones_like(points)
 
-
     for_data = range(points.shape[0])
     if print_progress:
         print("[INFO][filter::bilateral_filter]")
@@ -50,8 +49,8 @@ def bilateral_filter(
                 normals[point_idx], points[neighbor_idx] - points[point_idx]
             )
 
-            weight = np.exp(-(distance**2) / (2 * sigma_d**2)) * np.exp(
-                -(normal_dot**2) / (2 * sigma_n**2)
+            weight = np.exp(
+                -(distance**2) / (2 * sigma_d**2) - (normal_dot**2) / (2 * sigma_n**2)
             )
 
             sum_weight += weight
@@ -63,9 +62,9 @@ def bilateral_filter(
         if sum_lambda == 0 or sum_weight == 0:
             continue
 
+        move_dist = sum_lambda / sum_weight * curvatures_weight[point_idx]
+
         # 更新点云
-        filter_pcd.points[point_idx] += (
-            sum_lambda / sum_weight * normals[point_idx] * curvatures_weight[point_idx]
-        )
+        filter_pcd.points[point_idx] += move_dist * normals[point_idx]
 
     return filter_pcd

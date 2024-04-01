@@ -1,3 +1,4 @@
+import numpy as np
 from open3d_manage.Method.io import loadGeometry
 from open3d_manage.Method.curvature import (
     estimate_curvature_eig,
@@ -22,9 +23,10 @@ pcd_path_dict = {
 
 
 def demo():
-    sigma_d = 0.2
-    sigma_n = 10
-    knn_num = 30
+    sigma_d = 200.0
+    sigma_n = 2000.0
+    curvature_knn_num = 10
+    filter_knn_num = 40
     print_progress = True
 
     system = ["liu_win", "li_mac", "server"][2]
@@ -45,31 +47,39 @@ def demo():
     gt_pcd = gt_pcd.uniform_down_sample(10)
 
     print("start estimate curvature by fit...")
-    curvatures = estimate_curvature_fit(noise_pcd, knn_num, print_progress)
+    curvatures = estimate_curvature_fit(noise_pcd, curvature_knn_num, print_progress)
     weights = toFilterWeights(abs(curvatures))
 
     print("start bilateral_filter...")
     filter_pcd = bilateral_filter(
-        noise_pcd, sigma_d, sigma_n, 120, weights, print_progress
+        noise_pcd, sigma_d, sigma_n, filter_knn_num, weights, print_progress
     )
 
     print("start chamferDistance...")
-    chamfer_distance = chamferDistance(filter_pcd, gt_pcd)
+    noise_chamfer_distance = chamferDistance(noise_pcd, gt_pcd)
+    filter_chamfer_distance = chamferDistance(filter_pcd, gt_pcd)
+
+    print("noise_chamfer_distance:", noise_chamfer_distance)
+    print("filter_chamfer_distance:", filter_chamfer_distance)
 
     window_name = (
         " sigma_n="
         + str(sigma_n)
-        + " knn_num="
-        + str(knn_num)
-        + " CD="
-        + str(chamfer_distance)
+        + " curvature_knn_num="
+        + str(curvature_knn_num)
+        + " filter_knn_num="
+        + str(filter_knn_num)
+        + " NoiseCD="
+        + str(noise_chamfer_distance)
+        + " FilterCD="
+        + str(filter_chamfer_distance)
     )
 
     visualize_curvature(noise_pcd, curvatures)
 
     sizes = noise_pcd.get_axis_aligned_bounding_box().get_extent() * 1.1
 
-    noise_pcd.translate([0, 0, -sizes[2]])
+    gt_pcd.translate([0, 0, -sizes[2]])
 
     filter_pcd.translate([0, 0, sizes[2]])
 
