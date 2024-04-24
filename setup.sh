@@ -1,4 +1,10 @@
-pip install -U open3d numpy tqdm gradio plotly
+if [ "$(uname)" == "Darwin" ]; then
+	pip install open3d==0.15.1
+elif [ "$(uname)" = "Linux" ]; then
+	pip install -U open3d
+fi
+
+pip install -U numpy tqdm gradio plotly
 
 mkdir ssl
 cd ssl

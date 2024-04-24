@@ -1,4 +1,3 @@
-import numpy as np
 from open3d_manage.Method.io import loadGeometry
 from open3d_manage.Method.curvature import (
     estimate_curvature_eig,
