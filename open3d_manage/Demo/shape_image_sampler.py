@@ -7,7 +7,7 @@ def demo():
     height = 224
     left = 10
     top = 10
-    visible = False
+    visible = True
     obj_file_path = "/Users/fufu/github/OCC/mash-occ-decoder/output/mash-v2/v6.obj"
     save_folder_path = "./output/test1/"
     y_rotate_num = 8
