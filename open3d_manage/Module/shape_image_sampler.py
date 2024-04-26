@@ -28,6 +28,7 @@ class ShapeImageSampler(object):
         save_folder_path: str,
         y_rotate_num: int = 8,
         x_rotate_num: int = 5,
+        x_save_idxs: list = [1, 2, 3],
         overwrite: bool = False,
     ) -> bool:
         if not os.path.exists(shape_file_path):
@@ -54,7 +55,7 @@ class ShapeImageSampler(object):
                 dtype=float,
             )
 
-            for j in range(x_rotate_num):
+            for j in x_save_idxs:
                 x_rad = np.pi * (j / (x_rotate_num - 1) - 0.5)
                 cos_x = np.cos(x_rad)
                 sin_x = np.sin(x_rad)

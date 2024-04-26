@@ -10,14 +10,20 @@ def demo():
     visible = False
     obj_file_path = "/Users/fufu/github/OCC/mash-occ-decoder/output/mash-v2/v6.obj"
     save_folder_path = "./output/test1/"
-    z_rotate_num = 8
-    y_rotate_num = 5
+    y_rotate_num = 8
+    x_rotate_num = 5
+    x_save_idxs = [1, 2, 3]
     overwrite = True
 
     shape_image_sampler = ShapeImageSampler(
         window_name, width, height, left, top, visible
     )
     shape_image_sampler.sampleImages(
-        obj_file_path, save_folder_path, z_rotate_num, y_rotate_num, overwrite
+        obj_file_path,
+        save_folder_path,
+        y_rotate_num,
+        x_rotate_num,
+        x_save_idxs,
+        overwrite,
     )
     return True
