@@ -1,6 +1,8 @@
 # compiled
 __pycache__
 ssl
+.cache
+build
 
 # output
 output
