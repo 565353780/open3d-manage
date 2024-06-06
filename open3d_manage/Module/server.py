@@ -4,14 +4,9 @@ import gradio as gr
 import open3d as o3d
 
 from open3d_manage.Method.io import loadGeometry, saveGeometry
-from open3d_manage.Method.curvature import (
-    estimate_curvature_fit,
-)
-from open3d_manage.Method.filter import bilateral_filter
-from open3d_manage.Method.render import (
-    toFilterWeights,
-    toPlotFigure,
-)
+from open3d_manage.Method.curvature import estimate_curvature_fit
+from open3d_manage.Method.filter import bilateral_filter, toFilterWeights
+from open3d_manage.Method.render import toPlotFigure
 
 
 def renderInputData(input_pcd_file_path: str):

@@ -3,6 +3,7 @@ import open3d as o3d
 import plotly.graph_objs as go
 from copy import deepcopy
 
+from open3d_manage.Method.filter import toFilterWeights
 
 def renderGeometries(geometries, window_name: str = "Open3D Renderer") -> bool:
     if not isinstance(geometries, list):
@@ -12,47 +13,13 @@ def renderGeometries(geometries, window_name: str = "Open3D Renderer") -> bool:
     return True
 
 
-def toFilterWeights(curvatures):
-    # for i in range(30):
-    #     std = np.std(curvatures)
-    #     mean = np.mean(curvatures)
-    #     print(f"std:{std}, mean:{mean}")
-
-    #     dlimit = mean - 3 * std
-    #     ulimit = mean + 3 * std
-
-    #     curvatures = np.where(curvatures < dlimit, 0, curvatures)
-    #     curvatures = np.where(curvatures > ulimit, ulimit, curvatures)
-    # mean = np.mean(curvatures)
-    # weights = np.ones_like(curvatures)
-    # weights = np.where(curvatures >= mean, np.exp(-(curvatures-mean)**2/mean**2), weights)
-
-    # -----------------箱线剔除离群点--------------------------
-    Q1 = np.percentile(curvatures, 25)
-    Q3 = np.percentile(curvatures, 75)
-    IQR = Q3 - Q1
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
-    curvatures = np.where(curvatures < lower_bound, 0, curvatures)
-    curvatures = np.where(curvatures > upper_bound, upper_bound, curvatures)
-    mean = np.mean(curvatures)
-    weights = np.ones_like(curvatures)
-    weights = np.where(
-        curvatures >= mean, np.exp(-((curvatures - mean) ** 2) / mean**2), weights
-    )
-
-    return weights
-
-
 def visualize_curvature(pcd: o3d.geometry.PointCloud, curvatures: np.ndarray) -> bool:
     """by Junyi Liu"""
     render_pcd = deepcopy(pcd)
 
     point_num = np.asarray(render_pcd.points).shape[0]
 
-    abs_curvatures = np.abs(curvatures)
-
-    weights = toFilterWeights(abs_curvatures)
+    weights = toFilterWeights(np.abs(curvatures))
 
     # min = np.min(weights)
     # max = np.max(weights)

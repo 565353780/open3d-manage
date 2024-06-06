@@ -2,6 +2,8 @@ import numpy as np
 import open3d as o3d
 from tqdm import tqdm
 
+from open3d_manage.Method.knn import toKNNIdxs
+
 
 # 利用协方差矩阵特征值求曲率
 def estimate_curvature_eig(
@@ -32,9 +34,9 @@ def estimate_curvature_fit(
     pcd: o3d.geometry.PointCloud, k_num: int = 30, print_progress: bool = False
 ) -> np.ndarray:
     """by Junyi Liu"""
-    kdtree = o3d.geometry.KDTreeFlann(pcd)
-
     points = np.asarray(pcd.points)
+
+    idxs = toKNNIdxs(points, k_num)
 
     curvatures = np.zeros(points.shape[0])
 
@@ -44,7 +46,7 @@ def estimate_curvature_fit(
         print("\t start estimate curvature fit for each point...")
         for_data = tqdm(for_data)
     for i in for_data:
-        [_, idx, _] = kdtree.search_knn_vector_3d(points[i], k_num)
+        idx = idxs[i]
 
         A = np.zeros((k_num, 6))
         b = np.zeros((k_num, 1))

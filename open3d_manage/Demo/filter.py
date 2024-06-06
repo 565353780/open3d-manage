@@ -73,6 +73,7 @@ def demo():
         + " FilterCD="
         + str(filter_chamfer_distance)
     )
+    return
 
     visualize_curvature(noise_pcd, curvatures)
 
