@@ -1,6 +1,7 @@
 #include "Data/nano_flann_index.h"
 #include <nanoflann.hpp>
 
+template <int METRIC, class TReal, class TIndex>
 struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
   struct DataAdaptor {
     DataAdaptor(size_t dataset_size, int dimension, const float *const data_ptr)
@@ -20,7 +21,6 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
     const float *const data_ptr_;
   };
 
-  /// Adaptor Selector.
   template <int M, typename fake = void> struct SelectNanoflannAdaptor {};
 
   template <typename fake> struct SelectNanoflannAdaptor<L2, fake> {
@@ -31,7 +31,6 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
     typedef nanoflann::L1_Adaptor<float, DataAdaptor, float> adaptor_t;
   };
 
-  /// typedef for KDtree.
   typedef nanoflann::KDTreeSingleIndexAdaptor<
       typename SelectNanoflannAdaptor<METRIC>::adaptor_t, DataAdaptor, -1,
       TIndex>
@@ -48,17 +47,18 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
   std::unique_ptr<DataAdaptor> adaptor_;
 };
 
+template <class T, class TIndex, int METRIC>
 void _BuildKdTree(size_t num_points, const T *const points, size_t dimension,
                   NanoFlannIndexHolderBase **holder) {
   *holder = new NanoFlannIndexHolder<METRIC, T, TIndex>(num_points, dimension,
                                                         points);
 };
 
-std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
-                                                      const float *const points,
-                                                      size_t dimension,
-                                                      const Metric metric) {
-  NanoFlannIndexHolderBase *holder = new NanoFlannIndexHolder;
+template <class T, class TIndex>
+std::unique_ptr<NanoFlannIndexHolderBase>
+BuildKdTree(size_t num_points, const float *const points, size_t dimension,
+            const Metric metric) {
+  NanoFlannIndexHolderBase *holder = nullptr;
 #define FN_PARAMETERS num_points, points, dimension, &holder
 
 #define CALL_TEMPLATE(METRIC)                                                  \
@@ -69,6 +69,8 @@ std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
 #define CALL_TEMPLATE2                                                         \
   CALL_TEMPLATE(L1)                                                            \
   CALL_TEMPLATE(L2)
+
+  CALL_TEMPLATE2
 
 #undef CALL_TEMPLATE
 #undef CALL_TEMPLATE2
@@ -93,40 +95,42 @@ NanoFlannIndex::~NanoFlannIndex(){};
 bool NanoFlannIndex::SetTensorData(const torch::Tensor &dataset_points,
                                    const torch::Dtype &index_dtype) {
   if (dataset_points.sizes().size() != 2) {
-    utility::LogError("dataset_points must be 2D matrix, with shape "
-                      "{n_dataset_points, d}.");
+    std::cout << "dataset_points must be 2D matrix, with shape "
+                 "{n_dataset_points, d}."
+              << std::endl;
   }
 
   dataset_points_ = dataset_points.contiguous();
   index_dtype_ = index_dtype;
-  holder_ = impl::BuildKdTree<scalar_t, int_t>(
-      dataset_points_.GetShape(0), dataset_points_.GetDataPtr<scalar_t>(),
-      dataset_points_.GetShape(1), /* metric */ L2);
+  holder_ = BuildKdTree<float, int32_t>(
+      dataset_points_.size(0), dataset_points_.data_ptr<float>(),
+      dataset_points_.size(1), /* metric */ L2);
   return true;
 };
 
-std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
-                                                    int knn) const {
-  const Dtype dtype = GetDtype();
-  const Device device = GetDevice();
-  const Dtype index_dtype = GetIndexDtype();
-
-  core::AssertTensorDevice(query_points, device);
-  core::AssertTensorDtype(query_points, dtype);
-  core::AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+std::pair<torch::Tensor, torch::Tensor>
+NanoFlannIndex::SearchKnn(const torch::Tensor &query_points, int knn) const {
+  const torch::Dtype dtype = GetDtype();
+  const torch::Device device = GetDevice();
+  const torch::Dtype index_dtype = GetIndexDtype();
 
   if (knn <= 0) {
-    utility::LogError("knn should be larger than 0.");
+    std::cout << "knn should be larger than 0." << std::endl;
+
+    return std::pair<torch::Tensor, torch::Tensor>();
   }
 
   const int64_t num_neighbors = std::min(static_cast<int64_t>(GetDatasetSize()),
                                          static_cast<int64_t>(knn));
-  const int64_t num_query_points = query_points.GetShape(0);
+  const int64_t num_query_points = query_points.size(0);
 
-  Tensor indices, distances;
-  Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
+  torch::Tensor indices, distances;
+  const torch::TensorOptions opts = torch::TensorOptions().dtype(torch::kInt64);
+  torch::Tensor neighbors_row_splits =
+      torch::zeros({num_query_points + 1}, opts);
+
   DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
-    const Tensor query_contiguous = query_points.Contiguous();
+    const torch::Tensor query_contiguous = query_points.contiguous();
     NeighborSearchAllocator<scalar_t, int_t> output_allocator(device);
 
     impl::KnnSearchCPU<scalar_t, int_t>(
@@ -164,7 +168,7 @@ NanoFlannIndex::SearchRadius(const Tensor &query_points, const Tensor &radii,
   // Check if the radii has negative values.
   Tensor below_zero = radii.Le(0);
   if (below_zero.Any().Item<bool>()) {
-    utility::LogError("radius should be larger than 0.");
+    std::cout << "radius should be larger than 0." << std::endl;
   }
 
   Tensor indices, distances;
@@ -215,10 +219,10 @@ NanoFlannIndex::SearchHybrid(const Tensor &query_points, double radius,
   AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
   if (max_knn <= 0) {
-    utility::LogError("max_knn should be larger than 0.");
+    std::cout << "max_knn should be larger than 0." << std::endl;
   }
   if (radius <= 0) {
-    utility::LogError("radius should be larger than 0.");
+    std::cout << "radius should be larger than 0." << std::endl;
   }
 
   int64_t num_query_points = query_points.GetShape(0);
