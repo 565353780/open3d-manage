@@ -25,10 +25,25 @@ link_directories(${REL_PATH}/Lib/AMCAXPart/lib)
 link_directories(${REL_PATH}/Lib/AMCAXOCCTIO/lib)
 
 include_directories(./open3d_manage/Cpp)
+include_directories(./open3d_manage/Lib)
 
-set(SRC
-  ./open3d_manage/Cpp/Method/src/normal.cpp
-  ./open3d_manage/Cpp/Module/src/kdtree.cpp
+file(GLOB_RECURSE OPEN3D_SRC 
+  ./open3d_manage/Lib/open3d/core/*.cpp
+  ./open3d_manage/Lib/open3d/core/hashmap/*.cpp
+  ./open3d_manage/Lib/open3d/core/hashmap/CPU/*.cpp
+  ./open3d_manage/Lib/open3d/core/kernel/*.cpp
+  ./open3d_manage/Lib/open3d/core/linalg/*.cpp
+  ./open3d_manage/Lib/open3d/core/nns/*.cpp
+  ./open3d_manage/Lib/open3d/geometry/*.cpp
+  ./open3d_manage/Lib/open3d/t/geometry/*.cpp
+  ./open3d_manage/Lib/open3d/t/geometry/kernel/*.cpp
+  ./open3d_manage/Lib/open3d/utility/*.cpp
+)
+
+file(GLOB_RECURSE SRC 
+  ./open3d_manage/Cpp/Data/src/*.cpp
+  ./open3d_manage/Cpp/Method/src/*.cpp
+  ./open3d_manage/Cpp/Module/src/*.cpp
 )
 
 add_executable(${PROJECT_NAME} ./open3d_manage/Cpp/main.cpp ${SRC})

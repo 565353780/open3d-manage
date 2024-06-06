@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Data/metric.h"
-#include "Data/nns_index.h"
+#include "open3d/core/nns/NNSIndex.h"
 #include <torch/extension.h>
 
 struct NanoFlannIndexHolderBase {

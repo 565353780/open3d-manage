@@ -1,4 +1,6 @@
 #include "open3d/core/nns/NanoFlannIndex.h"
+#include "open3d/core/nns/NanoFlannImpl.h"
+#include "open3d/core/nns/NeighborSearchAllocator.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include <nanoflann.hpp>
 
@@ -130,22 +132,20 @@ NanoFlannIndex::SearchKnn(const torch::Tensor &query_points, int knn) const {
   torch::Tensor neighbors_row_splits =
       torch::zeros({num_query_points + 1}, opts);
 
-  DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
-    const torch::Tensor query_contiguous = query_points.contiguous();
-    NeighborSearchAllocator<scalar_t, int_t> output_allocator(device);
+  const torch::Tensor query_contiguous = query_points.contiguous();
+  NeighborSearchAllocator<float, int32_t> output_allocator(device);
 
-    impl::KnnSearchCPU<scalar_t, int_t>(
-        holder_.get(), neighbors_row_splits.GetDataPtr<int64_t>(),
-        dataset_points_.GetShape(0), dataset_points_.GetDataPtr<scalar_t>(),
-        query_contiguous.GetShape(0), query_contiguous.GetDataPtr<scalar_t>(),
-        query_contiguous.GetShape(1), num_neighbors, /* metric */ L2,
-        /* ignore_query_point */ false,
-        /* return_distances */ true, output_allocator);
-    indices = output_allocator.NeighborsIndex();
-    distances = output_allocator.NeighborsDistance();
-    indices = indices.View({num_query_points, num_neighbors});
-    distances = distances.View({num_query_points, num_neighbors});
-  });
+  impl::KnnSearchCPU<scalar_t, int_t>(
+      holder_.get(), neighbors_row_splits.GetDataPtr<int64_t>(),
+      dataset_points_.GetShape(0), dataset_points_.GetDataPtr<scalar_t>(),
+      query_contiguous.GetShape(0), query_contiguous.GetDataPtr<scalar_t>(),
+      query_contiguous.GetShape(1), num_neighbors, /* metric */ L2,
+      /* ignore_query_point */ false,
+      /* return_distances */ true, output_allocator);
+  indices = output_allocator.NeighborsIndex();
+  distances = output_allocator.NeighborsDistance();
+  indices = indices.View({num_query_points, num_neighbors});
+  distances = distances.View({num_query_points, num_neighbors});
   return std::make_pair(indices, distances);
 };
 
