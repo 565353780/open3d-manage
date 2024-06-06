@@ -1,4 +1,4 @@
-#include "Data/nns_index.h"
+#include "open3d/core/nns/NNSIndex.h"
 
 int NNSIndex::GetDimension() const { return dataset_points_.size(1); }
 

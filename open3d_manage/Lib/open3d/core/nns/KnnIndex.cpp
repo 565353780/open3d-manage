@@ -1,4 +1,4 @@
-#include "Data/knn_index.h"
+#include "open3d/core/nns/KnnIndex.h"
 
 KnnIndex::KnnIndex() {}
 

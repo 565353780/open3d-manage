@@ -1,4 +1,6 @@
-#include "Data/nns_index.h"
+#pragma once
+
+#include "open3d/core/nns/NNSIndex.h"
 #include <torch/extension.h>
 
 class KnnIndex : public NNSIndex {
