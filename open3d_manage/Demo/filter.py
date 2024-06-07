@@ -1,7 +1,7 @@
 from open3d_manage.Method.io import loadGeometry
 from open3d_manage.Method.curvature import (
-    estimate_curvature_eig,
-    estimate_curvature_fit,
+    estimateCurvaturesByEig,
+    estimateCurvaturesByFit,
 )
 from open3d_manage.Method.filter import bilateral_filter
 from open3d_manage.Metric.chamfer import chamferDistance
@@ -46,7 +46,7 @@ def demo():
     gt_pcd = gt_pcd.uniform_down_sample(10)
 
     print("start estimate curvature by fit...")
-    curvatures = estimate_curvature_fit(noise_pcd, curvature_knn_num, print_progress)
+    curvatures = estimateCurvaturesByFit(noise_pcd, curvature_knn_num, print_progress)
     weights = toFilterWeights(abs(curvatures))
 
     print("start bilateral_filter...")

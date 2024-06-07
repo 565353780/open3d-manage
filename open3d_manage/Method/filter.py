@@ -68,7 +68,7 @@ def bilateral_filter(
 
     return filter_pcd
 
-def toFilterWeights(curvatures):
+def toFilterWeights(curvatures: Union[np.ndarray, list]) -> np.ndarray:
     # for i in range(30):
     #     std = np.std(curvatures)
     #     mean = np.mean(curvatures)
@@ -84,6 +84,9 @@ def toFilterWeights(curvatures):
     # weights = np.where(curvatures >= mean, np.exp(-(curvatures-mean)**2/mean**2), weights)
 
     # -----------------箱线剔除离群点--------------------------
+    if isinstance(curvatures, list):
+        curvatures = np.array(curvatures)
+
     Q1 = np.percentile(curvatures, 25)
     Q3 = np.percentile(curvatures, 75)
     IQR = Q3 - Q1
@@ -98,3 +101,6 @@ def toFilterWeights(curvatures):
     )
 
     return weights
+
+def toFilterWeightsList(curvatures: list) -> list:
+    return toFilterWeights(curvatures).tolist()

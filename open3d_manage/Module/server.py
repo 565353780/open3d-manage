@@ -4,7 +4,7 @@ import gradio as gr
 import open3d as o3d
 
 from open3d_manage.Method.io import loadGeometry, saveGeometry
-from open3d_manage.Method.curvature import estimate_curvature_fit
+from open3d_manage.Method.curvature import estimateCurvaturesByFit
 from open3d_manage.Method.filter import bilateral_filter, toFilterWeights
 from open3d_manage.Method.render import toPlotFigure
 
@@ -42,7 +42,7 @@ def toDenoisedPcd(
         print_progress,
     )
 
-    curvatures = estimate_curvature_fit(noise_pcd, curvature_knn_num, print_progress)
+    curvatures = estimateCurvaturesByFit(noise_pcd, curvature_knn_num, print_progress)
     weights = toFilterWeights(abs(curvatures))
 
     print("start bilateral_filter...")
