@@ -13,17 +13,13 @@ int main() {
   std::vector<float> points;
   points.resize(3000);
   for (int i = 0; i < 1000; ++i) {
-    points[3 * i] = 1.0;
-    points[3 * i + 1] = 2.0;
-    points[3 * i + 2] = 3.0;
+    points[3 * i] = 1.0 * i;
+    points[3 * i + 1] = 2.0 * i;
+    points[3 * i + 2] = 3.0 * i;
   }
 
-  nc::NdArray points_nc = nc::zeros<float>(1000, 3);
-  for (int i = 0; i < 1000; ++i) {
-    points_nc(i, 0) = points[3 * i];
-    points_nc(i, 1) = points[3 * i + 1];
-    points_nc(i, 2) = points[3 * i + 2];
-  }
+  nc::NdArray<float> points_nc =
+      nc::NdArray<float>(points.data(), points.size()).reshape(1000, 3);
 
   // filter method call
   const nc::NdArray<float> denoised_points =

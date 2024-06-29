@@ -2,17 +2,36 @@
 #include "curvature.h"
 #include "knn.h"
 #include "normal.h"
-#include <Eigen/Core>
-#include <iostream>
-#include <open3d/Open3D.h>
 
 const nc::NdArray<float> toFilterWeights(const nc::NdArray<float> &curvatures) {
-  const nc::NdArray<double> Q1 = nc::percentile(curvatures, 25.0f);
-  const nc::NdArray<double> Q3 = nc::percentile(curvatures, 75.0f);
+  nc::NdArray<float> clipped_curvatures(curvatures);
 
-  const nc::NdArray<double> IQR = Q3 - Q1;
+  const float Q1 = nc::percentile<float>(clipped_curvatures, 25.0f)[0];
+  const float Q3 = nc::percentile<float>(clipped_curvatures, 75.0f)[0];
 
-  return curvatures;
+  const float IQR = Q3 - Q1;
+
+  const float lower_bound = Q1 - 1.5f * IQR;
+  const float upper_bound = Q1 + 1.5f * IQR;
+
+  clipped_curvatures = nc::where<float>(
+      clipped_curvatures < lower_bound,
+      nc::zeros<float>(clipped_curvatures.shape()), clipped_curvatures);
+  clipped_curvatures = nc::where<float>(
+      clipped_curvatures > upper_bound,
+      upper_bound * nc::ones<float>(clipped_curvatures.shape()),
+      clipped_curvatures);
+
+  const float mean = nc::mean<float>(clipped_curvatures)[0];
+  const nc::NdArray<float> regular_clipped_curvatures = curvatures - mean;
+
+  nc::NdArray<float> weights = nc::ones<float>(clipped_curvatures.shape());
+  weights = nc::where(clipped_curvatures >= mean,
+                      nc::exp(-regular_clipped_curvatures *
+                              regular_clipped_curvatures / mean / mean),
+                      weights);
+
+  return weights;
 }
 
 const nc::NdArray<float>
@@ -57,8 +76,6 @@ toBilateralFilterPts(const nc::NdArray<float> &points, const float &sigma_d,
     }
 
     const float move_dist = sum_lambda / sum_weight * curvature_weights[i];
-
-    std::cout << move_dist << std::endl;
 
     for (int j = 0; j < 3; ++j) {
       filter_points[3 * i + j] += move_dist * normals[3 * i + j];
