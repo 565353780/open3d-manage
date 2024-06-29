@@ -10,7 +10,7 @@ toBilateralFilterPts(const nc::NdArray<float> &points, const float &sigma_d,
                      const nc::NdArray<float> &curvature_weights,
                      const bool need_smooth = false);
 
-const nc::NdArray<float>
-toDenoisedPts(const nc::NdArray<float> &points, const float &sigma_d,
+const std::vector<float>
+toDenoisedPts(const std::vector<float> &points, const float &sigma_d,
               const float &sigma_n, const int &curvature_knn_num,
               const int &filter_knn_num, const bool &need_smooth = false);

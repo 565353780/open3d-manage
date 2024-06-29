@@ -2,6 +2,7 @@
 #include "curvature.h"
 #include "knn.h"
 #include "normal.h"
+#include "trans.h"
 
 const nc::NdArray<float> toFilterWeights(const nc::NdArray<float> &curvatures) {
   nc::NdArray<float> clipped_curvatures(curvatures);
@@ -85,17 +86,22 @@ toBilateralFilterPts(const nc::NdArray<float> &points, const float &sigma_d,
   return filter_points;
 }
 
-const nc::NdArray<float>
-toDenoisedPts(const nc::NdArray<float> &points, const float &sigma_d,
+const std::vector<float>
+toDenoisedPts(const std::vector<float> &points, const float &sigma_d,
               const float &sigma_n, const int &curvature_knn_num,
               const int &filter_knn_num, const bool &need_smooth) {
+  const nc::NdArray<float> points_array =
+      toArray(points).reshape(int(points.size() / 3), 3);
+
   const nc::NdArray<float> curvatures =
-      toCurvaturesByFit(points, curvature_knn_num);
+      toCurvaturesByFit(points_array, curvature_knn_num);
 
   const nc::NdArray<float> weights = toFilterWeights(curvatures);
 
-  const nc::NdArray<float> filter_points =
-      toBilateralFilterPts(points, sigma_d, sigma_n, filter_knn_num, weights);
+  const nc::NdArray<float> filter_points = toBilateralFilterPts(
+      points_array, sigma_d, sigma_n, filter_knn_num, weights);
 
-  return filter_points;
+  const std::vector<float> filter_points_vec = toVector(filter_points);
+
+  return filter_points_vec;
 }

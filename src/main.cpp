@@ -18,17 +18,14 @@ int main() {
     points[3 * i + 2] = 3.0 * i;
   }
 
-  nc::NdArray<float> points_nc =
-      nc::NdArray<float>(points.data(), points.size()).reshape(1000, 3);
-
   // filter method call
-  const nc::NdArray<float> denoised_points =
-      toDenoisedPts(points_nc, sigma_d, sigma_n, curvature_knn_num,
-                    filter_knn_num, need_smooth);
+  const std::vector<float> denoised_points = toDenoisedPts(
+      points, sigma_d, sigma_n, curvature_knn_num, filter_knn_num, need_smooth);
 
   // result output demo
-  std::cout << "input points size: " << points.size() << std::endl;
-  std::cout << "denoised points size: " << denoised_points.size() << std::endl;
+  std::cout << "input points size: " << points.size() / 3 << std::endl;
+  std::cout << "denoised points size: " << denoised_points.size() / 3
+            << std::endl;
 
   std::cout << "from: [" << points[0] << "," << points[1] << "," << points[2]
             << "]" << std::endl;
