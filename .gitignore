@@ -8,3 +8,6 @@ build
 output
 *.json
 *.png
+
+# 3rd large folders
+/3rd/open3d-devel-*
