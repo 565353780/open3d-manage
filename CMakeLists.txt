@@ -36,9 +36,7 @@ file(GLOB_RECURSE OPEN3D_SRC
   ./open3d_manage/Lib/open3d/utility/*.cpp
 )
 
-file(GLOB_RECURSE SRC 
-  ./src/*.cpp
-)
+file(GLOB_RECURSE SRC ./src/*.cpp)
 
 add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC})
 
