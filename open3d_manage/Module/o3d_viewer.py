@@ -97,9 +97,9 @@ class O3DViewer(object):
         self.vis.update_geometry(geometry)
         return True
 
-    def clearGeometries(self) -> bool:
+    def clearGeometries(self, reset_view_point: bool = True) -> bool:
         self.vis.clear_geometries()
-        self.vis.reset_view_point(True)
+        self.vis.reset_view_point(reset_view_point)
         return True
 
     def addLabel(self, position: Union[list, np.ndarray], label: str) -> bool:
