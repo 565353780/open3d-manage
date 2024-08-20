@@ -1,5 +1,5 @@
 import open3d as o3d
-from open3d_manage.Module.noise_adder import NoiseAdder
+from open3d_manage.Module.mesh_noise_adder import MeshNoiseAdder
 
 def demo():
     mesh_file_path = "/home/chli/chLi/Dataset/ManifoldMesh/ShapeNet/02691156/2af04ef09d49221b85e5214b0d6a7.obj"
@@ -13,16 +13,14 @@ def demo():
     save_gauss_noise_pcd_file_path = "/home/chli/chLi/Dataset/ManifoldMesh_NoisePcd/ShapeNet/02691156/2af04ef09d49221b85e5214b0d6a7/Gauss/mean-" + str(gauss_mean) + "_sigma-" + str(gauss_sigma) + ".ply"
     save_impulse_noise_pcd_file_path = "/home/chli/chLi/Dataset/ManifoldMesh_NoisePcd/ShapeNet/02691156/2af04ef09d49221b85e5214b0d6a7/Impulse/probility-" + str(impulse_probability) + ".ply"
     overwrite = False
-    need_reset = True
 
     mesh = o3d.io.read_triangle_mesh(mesh_file_path)
-    pcd = mesh.sample_points_poisson_disk(sample_point_num)
 
-    noise_adder = NoiseAdder(pcd)
-    noise_adder.addRandomNoise(random_strength)
-    noise_adder.save(save_random_noise_pcd_file_path, overwrite, need_reset)
-    noise_adder.addGaussNoise(gauss_mean, gauss_sigma)
-    noise_adder.save(save_gauss_noise_pcd_file_path, overwrite, need_reset)
-    noise_adder.addImpulseNoise(impulse_strength, impulse_probability)
-    noise_adder.save(save_impulse_noise_pcd_file_path, overwrite, need_reset)
+    mesh_noise_adder = MeshNoiseAdder(mesh)
+    mesh_noise_adder.addRandomNoise(sample_point_num, random_strength)
+    mesh_noise_adder.save(save_random_noise_pcd_file_path, overwrite)
+    mesh_noise_adder.addGaussNoise(sample_point_num, gauss_mean, gauss_sigma)
+    mesh_noise_adder.save(save_gauss_noise_pcd_file_path, overwrite)
+    mesh_noise_adder.addImpulseNoise(sample_point_num, impulse_strength, impulse_probability)
+    mesh_noise_adder.save(save_impulse_noise_pcd_file_path, overwrite)
     return True

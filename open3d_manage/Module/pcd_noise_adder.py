@@ -5,7 +5,7 @@ from copy import deepcopy
 from open3d_manage.Method.noise import toRandomNoisePCD, toGaussNoisePCD, toImpulseNoisePCD
 from open3d_manage.Method.path import removeFile, createFileFolder
 
-class NoiseAdder:
+class PcdNoiseAdder:
     def __init__(self, pcd: o3d.geometry.PointCloud) -> None:
         self.source_pcd = deepcopy(pcd)
         self.pcd = deepcopy(pcd)
