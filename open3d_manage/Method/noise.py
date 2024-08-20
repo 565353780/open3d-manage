@@ -2,25 +2,24 @@ import numpy as np
 import open3d as o3d
 from copy import deepcopy
 
-def getRandomNoise(noise_strength: float, noise_shape: list) -> np.ndarray:
-    return noise_strength * np.random.uniform(-1, 1, noise_shape)
+def getRandomNoise(strength: float, noise_shape: list) -> np.ndarray:
+    return strength * np.random.uniform(-1, 1, noise_shape)
 
 def getGaussNoise(mean: float, sigma: float, noise_shape: list) -> np.ndarray:
     return np.random.normal(mean, sigma, noise_shape)
 
-def getImpulseNoise(probability: float, noise_shape: list) -> np.ndarray:
+def getImpulseNoise(strength: float, probability: float, noise_shape: list) -> np.ndarray:
     noise = np.zeros(noise_shape, dtype=np.float32)
-
-    noise[np.random.rand(*noise_shape) < probability] = np.random.rand()
+    noise[np.random.rand(*noise_shape) < probability] = strength * np.random.rand()
     return noise
 
 def toRandomNoisePCD(
-    pcd: o3d.geometry.PointCloud, noise_strength: float) -> o3d.geometry.PointCloud:
+    pcd: o3d.geometry.PointCloud, strength: float) -> o3d.geometry.PointCloud:
     random_noise_pcd = deepcopy(pcd)
 
     points = np.asarray(random_noise_pcd.points)
 
-    random_noise = getRandomNoise(noise_strength, points.shape)
+    random_noise = getRandomNoise(strength, points.shape)
     points += random_noise
 
     random_noise_pcd.points = o3d.utility.Vector3dVector(points)
@@ -41,12 +40,12 @@ def toGaussNoisePCD(
     return gauss_noise_pcd
 
  
-def toImpulseNoisePCD(pcd: o3d.geometry.PointCloud, probability: float):
+def toImpulseNoisePCD(pcd: o3d.geometry.PointCloud, strength: float, probability: float):
     impulse_noise_pcd = deepcopy(pcd)
  
     points = np.asarray(impulse_noise_pcd.points)
 
-    impulse_noise = getImpulseNoise(probability, points.shape)
+    impulse_noise = getImpulseNoise(strength, probability, points.shape)
     points += impulse_noise
 
     impulse_noise_pcd.points = o3d.utility.Vector3dVector(points)
