@@ -52,9 +52,12 @@ class NoiseDatasetGenerator(object):
 
             strength = noise_dict['strength']
 
-            mesh_noise_adder.addRandomNoise(sample_point_num, strength)
-
             save_noise_pcd_file_path = save_noise_pcd_folder_path + 'Random/sample-' + str(sample_point_num) + '_strength-' + str(strength) + '.ply'
+            if not overwrite:
+                if os.path.exists(save_noise_pcd_file_path):
+                    return True
+
+            mesh_noise_adder.addRandomNoise(sample_point_num, strength)
 
             mesh_noise_adder.save(save_noise_pcd_file_path, overwrite)
 
@@ -74,9 +77,12 @@ class NoiseDatasetGenerator(object):
             mean = noise_dict['mean']
             sigma = noise_dict['sigma']
 
-            mesh_noise_adder.addGaussNoise(sample_point_num, mean, sigma)
-
             save_noise_pcd_file_path = save_noise_pcd_folder_path + 'Gauss/sample-' + str(sample_point_num) + '_mean-' + str(mean) + '_sigma-' + str(sigma) + '.ply'
+            if not overwrite:
+                if os.path.exists(save_noise_pcd_file_path):
+                    return True
+
+            mesh_noise_adder.addGaussNoise(sample_point_num, mean, sigma)
 
             mesh_noise_adder.save(save_noise_pcd_file_path, overwrite)
 
@@ -96,9 +102,12 @@ class NoiseDatasetGenerator(object):
             strength = noise_dict['strength']
             probability = noise_dict['probability']
 
-            mesh_noise_adder.addImpulseNoise(sample_point_num, strength, probability)
-
             save_noise_pcd_file_path = save_noise_pcd_folder_path + 'Impulse/sample-' + str(sample_point_num) + '_strength-' + str(strength) + '_probability-' + str(probability) + '.ply'
+            if not overwrite:
+                if os.path.exists(save_noise_pcd_file_path):
+                    return True
+
+            mesh_noise_adder.addImpulseNoise(sample_point_num, strength, probability)
 
             mesh_noise_adder.save(save_noise_pcd_file_path, overwrite)
 
@@ -121,21 +130,21 @@ class NoiseDatasetGenerator(object):
 
         return True
 
-    def autoGenerateNoisePcds(self, noise_dict_list: list, overwrite: bool = False) -> bool:
+    def autoGenerateNoisePcds(self, noise_dict_list: list, overwrite: bool = False, skip_id_list: list = []) -> bool:
         mesh_filename_list = os.listdir(self.source_mesh_folder_path)
         mesh_filename_list.sort()
 
         mesh_num = len(mesh_filename_list)
 
         for i, mesh_filename in enumerate(mesh_filename_list):
-            if i >= 10:
-                break
+            mesh_file_basename = mesh_filename.split('.')[0]
+
+            if mesh_file_basename in skip_id_list:
+                continue
 
             mesh_file_path = self.source_mesh_folder_path + mesh_filename
 
             mesh = o3d.io.read_triangle_mesh(mesh_file_path)
-
-            mesh_file_basename = mesh_filename.split('.')[0]
 
             save_noise_pcd_folder_path = self.noise_pcd_folder_path + mesh_file_basename + '/'
 
