@@ -144,6 +144,12 @@ const std::string NoiseDatasetLoader::getShapeFilePath(
 
     noise_pcd_file_name += "_probability-" + it->second;
   }
+  else{
+    std::cout << "[ERROR][NoiseDatasetLoader::getShapeFilePath]" << std::endl;
+    std::cout << "\t noise type not valid!" << std::endl;
+    std::cout << "\t noise_type : " << noise_type << std::endl;
+    std::cout << "\t valid noise types : Random, Gauss, Impulse" << std::endl;
+  }
 
   noise_pcd_file_name += ".ply";
 

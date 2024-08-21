@@ -18,25 +18,27 @@ int main() {
   NoiseDatasetLoader noise_dataset_loader(dataset_root_folder_path);
   const std::vector<std::string> shape_id_vec = noise_dataset_loader.getShapeIdVec();
   const std::string shape_id = shape_id_vec[0];
+  const std::string noise_type = "Gauss";
+  std::unordered_map<std::string, std::string> params;
+  params["sample_point_num"] = "10000"; // 10000, 100000
 
-  const std::string random_noise_type = "Random";
-  std::unordered_map<std::string, std::string> random_params;
-  random_params["sample_point_num"] = "10000"; // 10000, 100000
-  random_params["strength"] = "0.005"; // 0.005, 0.01, 0.02
+  if (noise_type == "Random"){
+    params["strength"] = "0.005"; // 0.005, 0.01, 0.02
+  }
+  else if (noise_type == "Gauss"){
+    params["mean"] = "0.0"; // 0.0
+    params["sigma"] = "0.005"; // 0.005, 0.01, 0.02
+  }
+  else if (noise_type == "Impulse"){
+    params["strength"] = "0.02"; // 0.02, 0.04, 0.08
+    params["probability"] = "0.1"; // 0.1
+  }
+  else{
+    std::cout << "noise type not defined!" << std::endl;
+    return -1;
+  }
 
-  const std::string gauss_noise_type = "Gauss";
-  std::unordered_map<std::string, std::string> gauss_params;
-  gauss_params["sample_point_num"] = "10000"; // 10000, 100000
-  gauss_params["mean"] = "0.0"; // 0.0
-  gauss_params["sigma"] = "0.005"; // 0.005, 0.01, 0.02
-
-  const std::string impulse_noise_type = "Impulse";
-  std::unordered_map<std::string, std::string> impulse_params;
-  impulse_params["sample_point_num"] = "10000"; // 10000, 100000
-  impulse_params["strength"] = "0.02"; // 0.02, 0.04, 0.08
-  impulse_params["probability"] = "0.1"; // 0.1
-
-  const std::string shape_file_path = noise_dataset_loader.getShapeFilePath(shape_id, gauss_noise_type, gauss_params);
+  const std::string shape_file_path = noise_dataset_loader.getShapeFilePath(shape_id, noise_type, params);
   std::cout << shape_file_path << std::endl;
 
   // input point cloud [x1, y1, z1, x2, y2, z2, ...]
