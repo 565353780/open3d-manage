@@ -12,7 +12,12 @@ public:
 
   const std::vector<std::string> getShapeIdVec();
 
-  const std::string getShapeFilePath(
+  const std::string getNoisePcdFilePath(
+      const std::string &shape_id,
+      const std::string &noise_type,
+      const std::unordered_map<std::string, std::string> &params);
+
+  const std::vector<float> getNoisePoints(
       const std::string &shape_id,
       const std::string &noise_type,
       const std::unordered_map<std::string, std::string> &params);

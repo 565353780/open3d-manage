@@ -1,6 +1,7 @@
 #include "filter.h"
 #include "noise_dataset_loader.h"
 #include <iostream>
+#include <limits>
 #include <string>
 
 int main() {
@@ -38,31 +39,55 @@ int main() {
     return -1;
   }
 
-  const std::string shape_file_path = noise_dataset_loader.getShapeFilePath(shape_id, noise_type, params);
+  const std::string shape_file_path = noise_dataset_loader.getNoisePcdFilePath(shape_id, noise_type, params);
   std::cout << shape_file_path << std::endl;
 
   // input point cloud [x1, y1, z1, x2, y2, z2, ...]
-  std::vector<float> points;
-  points.resize(3000);
-  for (int i = 0; i < 1000; ++i) {
-    points[3 * i] = 1.0 * i;
-    points[3 * i + 1] = 2.0 * i;
-    points[3 * i + 2] = 3.0 * i;
-  }
+  const std::vector<float> points = noise_dataset_loader.getNoisePoints(shape_id, noise_type, params);
+  std::cout << points[0] << std::endl;
+  std::cout << points[1] << std::endl;
+  std::cout << points[2] << std::endl;
+  std::cout << points.size() << std::endl;
 
   // filter method call
   const std::vector<float> denoised_points = toDenoisedPts(
       points, sigma_d, sigma_n, curvature_knn_num, filter_knn_num, need_smooth);
 
   // result output demo
-  std::cout << "input points size: " << points.size() / 3 << std::endl;
+  const int point_num = int(points.size() / 3);
+
+  std::cout << "input points size: " << point_num << std::endl;
   std::cout << "denoised points size: " << denoised_points.size() / 3
             << std::endl;
 
-  std::cout << "from: [" << points[0] << "," << points[1] << "," << points[2]
-            << "]" << std::endl;
-  std::cout << "to: [" << denoised_points[0] << "," << denoised_points[1] << ","
-            << denoised_points[2] << "]" << std::endl;
+
+  float min_move_dist = std::numeric_limits<float>().max();
+  float mean_move_dist = 0.0;
+  float max_move_dist = 0.0;
+  std::vector<float> move_dists;
+  move_dists.reserve(point_num);
+  for (int i = 0; i < point_num; ++i){
+    const float x_diff = denoised_points[3 * i] - points[3 * i];
+    const float y_diff = denoised_points[3 * i + 1] - points[3 * i + 1];
+    const float z_diff = denoised_points[3 * i + 2] - points[3 * i + 2];
+
+    const float move_dist = x_diff * x_diff + y_diff * y_diff + z_diff * z_diff;
+
+    move_dists.emplace_back(move_dist);
+
+    if (move_dist < min_move_dist){
+      min_move_dist = move_dist;
+    }
+
+    if (move_dist > max_move_dist){
+      max_move_dist = move_dist;
+    }
+
+    mean_move_dist += move_dist;
+  }
+  mean_move_dist /= move_dists.size();
+
+  std::cout << "move dist : min " << min_move_dist << ", mean " << mean_move_dist << ", max " << max_move_dist << std::endl;
 
   return 1;
 }
