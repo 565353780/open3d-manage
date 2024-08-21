@@ -39,6 +39,7 @@ file(GLOB_RECURSE OPEN3D_SRC
 )
 
 file(GLOB_RECURSE SRC ./src/*.cpp)
+list(FILTER SRC EXCLUDE REGEX "main.cpp")
 
 add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC})
 
