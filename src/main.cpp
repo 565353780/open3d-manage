@@ -5,9 +5,6 @@
 #include <string>
 
 int main() {
-  // dataset params
-  const std::string dataset_root_folder_path = "/home/chli/Dataset/";
-
   // super params
   const float sigma_d = 200;
   const float sigma_n = 2000;
@@ -16,13 +13,17 @@ int main() {
   const bool need_smooth = true;
 
   // call data from dataset
+  const std::string dataset_root_folder_path = "/home/chli/Dataset/";
+
   NoiseDatasetLoader noise_dataset_loader(dataset_root_folder_path);
+
   const std::vector<std::string> shape_id_vec = noise_dataset_loader.getShapeIdVec();
+
   const std::string shape_id = shape_id_vec[0];
   const std::string noise_type = "Gauss";
   std::unordered_map<std::string, std::string> params;
-  params["sample_point_num"] = "10000"; // 10000, 100000
 
+  params["sample_point_num"] = "10000"; // 10000, 100000
   if (noise_type == "Random"){
     params["strength"] = "0.005"; // 0.005, 0.01, 0.02
   }
@@ -39,15 +40,8 @@ int main() {
     return -1;
   }
 
-  const std::string shape_file_path = noise_dataset_loader.getNoisePcdFilePath(shape_id, noise_type, params);
-  std::cout << shape_file_path << std::endl;
-
   // input point cloud [x1, y1, z1, x2, y2, z2, ...]
   const std::vector<float> points = noise_dataset_loader.getNoisePoints(shape_id, noise_type, params);
-  std::cout << points[0] << std::endl;
-  std::cout << points[1] << std::endl;
-  std::cout << points[2] << std::endl;
-  std::cout << points.size() << std::endl;
 
   // filter method call
   const std::vector<float> denoised_points = toDenoisedPts(
