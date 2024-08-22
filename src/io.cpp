@@ -34,11 +34,11 @@ const bool savePointsAsPcd(const std::vector<float> &points, const std::string &
   return true;
 }
 
-const std::vector<float> loadPointsFromFile(const std::string &file_path){
+const std::vector<float> loadPointsFromPcdFile(const std::string &file_path){
   std::vector<float> points;
 
   if (!std::filesystem::exists(file_path)){
-    std::cout << "[ERROR][io::loadPointsFromFile]" << std::endl;
+    std::cout << "[ERROR][io::loadPointsFromPcdFile]" << std::endl;
     std::cout << "\t file not exist!" << std::endl;
     std::cout << "\t file_path : " << file_path << std::endl;
     return points;
@@ -46,7 +46,7 @@ const std::vector<float> loadPointsFromFile(const std::string &file_path){
 
   open3d::geometry::PointCloud pcd;
   if (!open3d::io::ReadPointCloud(file_path, pcd)){
-    std::cout << "[ERROR][io::loadPointsFromFile]" << std::endl;
+    std::cout << "[ERROR][io::loadPointsFromPcdFile]" << std::endl;
     std::cout << "\t ReadPointCloud failed!" << std::endl;
     std::cout << "\t file_path : " << file_path << std::endl;
     return points;
@@ -54,6 +54,36 @@ const std::vector<float> loadPointsFromFile(const std::string &file_path){
 
   points.reserve(pcd.points_.size() * 3);
   for (auto point : pcd.points_){
+    points.emplace_back(point[0]);
+    points.emplace_back(point[1]);
+    points.emplace_back(point[2]);
+  }
+
+  return points;
+}
+
+const std::vector<float> loadPointsFromMeshFile(const std::string &file_path, const int &sample_point_num){
+  std::vector<float> points;
+
+  if (!std::filesystem::exists(file_path)){
+    std::cout << "[ERROR][io::loadPointsFromMeshFile]" << std::endl;
+    std::cout << "\t file not exist!" << std::endl;
+    std::cout << "\t file_path : " << file_path << std::endl;
+    return points;
+  }
+
+  open3d::geometry::TriangleMesh mesh;
+  if (!open3d::io::ReadTriangleMesh(file_path, mesh)){
+    std::cout << "[ERROR][io::loadPointsFromMeshFile]" << std::endl;
+    std::cout << "\t ReadPointCloud failed!" << std::endl;
+    std::cout << "\t file_path : " << file_path << std::endl;
+    return points;
+  }
+
+  std::shared_ptr<open3d::geometry::PointCloud> sampled_pcd = mesh.SamplePointsUniformly(sample_point_num);
+
+  points.reserve(sampled_pcd->points_.size() * 3);
+  for (auto point : sampled_pcd->points_){
     points.emplace_back(point[0]);
     points.emplace_back(point[1]);
     points.emplace_back(point[2]);
