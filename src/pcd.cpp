@@ -1,6 +1,5 @@
 #include "pcd.h"
 #include <Eigen/Core>
-#include <memory>
 
 std::shared_ptr<open3d::geometry::PointCloud>
 toPcd(const nc::NdArray<float> &points) {
