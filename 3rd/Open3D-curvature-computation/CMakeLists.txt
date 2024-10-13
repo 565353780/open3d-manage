@@ -1,7 +1,14 @@
 # On Ubuntu 18.04, get the latest CMake from https://apt.kitware.com/.
 cmake_minimum_required(VERSION 3.18)
+set(CMAKE_CXX_FLAGS "-std=c++17 -O0")
 
 project(Open3DCMakeFindPackage LANGUAGES C CXX)
+
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(D_GLIBCXX_USE_CXX11_ABI 0)
+
+set(Open3D_ROOT ../../open3d-devel-linux/)
 
 # The options need to be the same as Open3D's default
 # If Open3D is configured and built with custom options, you'll also need to
