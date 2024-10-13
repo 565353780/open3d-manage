@@ -16,6 +16,18 @@ NoiseDatasetLoader::NoiseDatasetLoader(const std::string &dataset_root_folder_pa
   isValid();
 }
 
+NoiseDatasetLoader::NoiseDatasetLoader(const std::string &dataset_root_folder_path, const std::string &dataset_done_folder_path){
+  dataset_root_folder_path_ = dataset_root_folder_path;
+
+  source_mesh_folder_path_ = dataset_root_folder_path_ + "ManifoldMesh/ShapeNet/02691156/";
+  noise_pcd_folder_path_ = dataset_root_folder_path_ + "ManifoldMesh_NoisePcd/ShapeNet/02691156/";
+
+  source_mesh_folder_path_test_ = dataset_done_folder_path + "ManifoldMesh/ShapeNet/02691156/";
+  noise_pcd_folder_path_test_ = dataset_done_folder_path + "ManifoldMesh_NoisePcd/ShapeNet/02691156/";
+
+  isValid();
+}
+
 const bool NoiseDatasetLoader::isValid(){
   if (dataset_root_folder_path_ == ""){
     std::cout << "[ERROR][NoiseDatasetLoader::isValid]" << std::endl;
@@ -49,6 +61,10 @@ const bool NoiseDatasetLoader::isValid(){
 }
 
 const std::vector<std::string> NoiseDatasetLoader::getShapeIdVec(){
+  //FIXME: these shapes are not valid for open3d
+  std::vector<std::string> invalid_shape_id_vec;
+  // invalid_shape_id_vec.emplace_back("133b74393a3349aa70c4138179d9ed97");
+
   std::vector<std::string> shape_id_vec;
 
   if (!isValid()){
@@ -61,6 +77,10 @@ const std::vector<std::string> NoiseDatasetLoader::getShapeIdVec(){
     }
 
     const std::string shape_id = entry.path().filename();
+
+    if (std::find(invalid_shape_id_vec.begin(), invalid_shape_id_vec.end(), shape_id) != invalid_shape_id_vec.end()){
+      continue;
+    }
 
     shape_id_vec.emplace_back(shape_id);
   }
@@ -157,6 +177,12 @@ const std::string NoiseDatasetLoader::getNoisePcdFilePath(
   noise_pcd_file_name += ".ply";
 
   shape_file_path = shape_noise_pcd_folder_path + noise_pcd_file_name;
+
+  current_process_noise_file_ = shape_file_path;
+  post_process_noise_file_ = noise_pcd_folder_path_test_ + shape_id + "/" + noise_type + "/" + noise_pcd_file_name;
+
+  current_process_mesh_file_ = source_mesh_folder_path_ + shape_id + ".obj";
+  post_process_mesh_file_ = source_mesh_folder_path_test_ + shape_id + ".obj";
 
   return shape_file_path;
 }
