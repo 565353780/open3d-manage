@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // ----------------------------------------------------------------------------
 
-#include "TotalCurvature.h"
-#include "CurvatureUtils.h"
+#include "Curvature/TotalCurvature.h"
+#include "Curvature/CurvatureUtils.h"
 #include <omp.h>
 
 namespace open3d {

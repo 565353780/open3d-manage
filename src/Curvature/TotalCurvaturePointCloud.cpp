@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // ----------------------------------------------------------------------------
 
-#include "TotalCurvaturePointCloud.h"
-#include "CurvatureUtils.h"
+#include "Curvature/TotalCurvaturePointCloud.h"
+#include "Curvature/CurvatureUtils.h"
 
 #include <Eigen/Dense>
 #include <algorithm>
@@ -19,8 +19,6 @@
 #include <utility>
 #include <vector>
 
-#include "CurvatureUtils.h"
-#include "TotalCurvaturePointCloud.h"
 #include "open3d/Open3D.h"
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>

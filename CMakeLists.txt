@@ -8,12 +8,31 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(D_GLIBCXX_USE_CXX11_ABI 0)
 
+# The options need to be the same as Open3D's default
+# If Open3D is configured and built with custom options, you'll also need to
+# specify the same custom options.
+option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" ON)
+if(STATIC_WINDOWS_RUNTIME)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
+
 find_package(Open3D REQUIRED)
 if (Open3D_FOUND)
   message(STATUS "Found Open3D ${Open3D_VERSION}")
   link_directories(${Open3D_LIBRARY_DIRS})
   include_directories(${Open3D_INCLUDE_DIRS})
 endif()
+
+# openmp
+find_package(OpenMP REQUIRED)
+
+# Find the CGAL library
+find_package(CGAL REQUIRED)
+
+# Include CGAL's directories and libraries
+include(${CGAL_USE_FILE})
 
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
@@ -25,21 +44,27 @@ include_directories(./include/)
 
 include_directories(./3rd/NumCpp/include/)
 
-file(GLOB_RECURSE OPEN3D_SRC 
-  ./open3d_manage/Lib/open3d/core/*.cpp
-  ./open3d_manage/Lib/open3d/core/hashmap/*.cpp
-  ./open3d_manage/Lib/open3d/core/hashmap/CPU/*.cpp
-  ./open3d_manage/Lib/open3d/core/kernel/*.cpp
-  ./open3d_manage/Lib/open3d/core/linalg/*.cpp
-  ./open3d_manage/Lib/open3d/core/nns/*.cpp
-  ./open3d_manage/Lib/open3d/geometry/*.cpp
-  ./open3d_manage/Lib/open3d/t/geometry/*.cpp
-  ./open3d_manage/Lib/open3d/t/geometry/kernel/*.cpp
-  ./open3d_manage/Lib/open3d/utility/*.cpp
-)
-
 file(GLOB_RECURSE SRC ./src/*.cpp)
 list(FILTER SRC EXCLUDE REGEX "main.cpp")
+file(GLOB_RECURSE CURVATURE_SRC ./src/Curvature/*.cpp)
+list(FILTER CURVATURE_SRC EXCLUDE REGEX "Draw.cpp")
+
+add_executable(Draw ./src/Curvature/Draw.cpp ${CURVATURE_SRC})
+target_link_libraries(Draw PRIVATE Open3D::Open3D)
+target_link_libraries(Draw PRIVATE OpenMP::OpenMP_CXX)
+target_link_libraries(Draw PRIVATE ${CGAL_LIBRARIES})
+
+# On Windows if BUILD_SHARED_LIBS is enabled, copy .dll files to the executable directory
+if(WIN32)
+    get_target_property(open3d_type Open3D::Open3D TYPE)
+    if(open3d_type STREQUAL "SHARED_LIBRARY")
+        message(STATUS "Copying Open3D.dll to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
+        add_custom_command(TARGET Draw POST_BUILD
+                           COMMAND ${CMAKE_COMMAND} -E copy
+                                   ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll
+                                   ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
+    endif()
+endif()
 
 add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC})
 
