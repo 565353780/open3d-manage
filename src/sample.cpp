@@ -88,6 +88,9 @@ const bool sampleLocalSurfaceNearVertex(const std::string &mesh_file_path,
     if (is_sample_enough_faces){
       break;
     }
+    if (next_search_vertex_idxs.size()==0) {
+      break;
+    }
 
     current_search_vertex_idxs = next_search_vertex_idxs;
     next_search_vertex_idxs.clear();
