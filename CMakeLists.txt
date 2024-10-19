@@ -47,12 +47,6 @@ include_directories(./3rd/NumCpp/include/)
 file(GLOB_RECURSE SRC ./src/*.cpp)
 list(FILTER SRC EXCLUDE REGEX "main.cpp")
 file(GLOB_RECURSE CURVATURE_SRC ./src/Curvature/*.cpp)
-list(FILTER CURVATURE_SRC EXCLUDE REGEX "Draw.cpp")
-
-add_executable(Draw ./src/Curvature/Draw.cpp ${CURVATURE_SRC})
-target_link_libraries(Draw PRIVATE Open3D::Open3D)
-target_link_libraries(Draw PRIVATE OpenMP::OpenMP_CXX)
-target_link_libraries(Draw PRIVATE ${CGAL_LIBRARIES})
 
 # On Windows if BUILD_SHARED_LIBS is enabled, copy .dll files to the executable directory
 if(WIN32)
@@ -66,7 +60,7 @@ if(WIN32)
     endif()
 endif()
 
-add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC})
+add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC} ${CURVATURE_SRC})
 
 find_library(TORCH_PYTHON_LIBRARY torch_python PATH "${TORCH_INSTALL_PREFIX}/lib")
 
@@ -74,3 +68,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Open3D::Open3D)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${TORCH_PYTHON_LIBRARY})
 target_link_libraries(${PROJECT_NAME} PRIVATE pybind11::embed)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${CGAL_LIBRARIES})

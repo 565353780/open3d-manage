@@ -6,12 +6,10 @@
 // ----------------------------------------------------------------------------
 
 #include "Curvature/CurvatureUtils.h"
-#include "open3d/Open3D.h"
 #include <Eigen/Core>
 #include <Eigen/Sparse>
-#include <iostream>
 #include <omp.h>
-#include <string>
+#include <open3d/Open3D.h>
 
 namespace open3d {
 namespace geometry {

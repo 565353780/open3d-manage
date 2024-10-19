@@ -9,8 +9,6 @@
 
 #include <Eigen/Core>
 #include <Eigen/Sparse>
-#include <memory>
-#include <vector>
 
 namespace open3d {
 namespace geometry {

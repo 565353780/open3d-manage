@@ -9,21 +9,17 @@
 #include "Curvature/CurvatureUtils.h"
 
 #include <Eigen/Dense>
-#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <omp.h>
-#include <random>
-#include <sstream>
-#include <thread>
 #include <utility>
 #include <vector>
 
-#include "open3d/Open3D.h"
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Projection_traits_xy_3.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <open3d/Open3D.h>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Projection_traits_xy_3<K> Gt;
