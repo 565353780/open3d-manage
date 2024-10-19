@@ -8,6 +8,9 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(D_GLIBCXX_USE_CXX11_ABI 0)
 
+find_package(Torch REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
 # The options need to be the same as Open3D's default
 # If Open3D is configured and built with custom options, you'll also need to
 # specify the same custom options.
@@ -34,9 +37,6 @@ find_package(CGAL REQUIRED)
 # Include CGAL's directories and libraries
 include(${CGAL_USE_FILE})
 
-find_package(Torch REQUIRED)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
-
 find_package(Python COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG)
 
@@ -53,7 +53,7 @@ if(WIN32)
     get_target_property(open3d_type Open3D::Open3D TYPE)
     if(open3d_type STREQUAL "SHARED_LIBRARY")
         message(STATUS "Copying Open3D.dll to ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
-        add_custom_command(TARGET Draw POST_BUILD
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                            COMMAND ${CMAKE_COMMAND} -E copy
                                    ${CMAKE_INSTALL_PREFIX}/bin/Open3D.dll
                                    ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
