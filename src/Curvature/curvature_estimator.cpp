@@ -5,19 +5,20 @@
 #include <filesystem>
 #include <iostream>
 #include <memory>
+#include <open3d/geometry/PointCloud.h>
 
-const bool
+std::shared_ptr<open3d::geometry::TriangleMesh>
 CurvatureEstimator::toMeshTotalCurvature(const std::string &mesh_file_path) {
+  std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr =
+      std::make_shared<open3d::geometry::TriangleMesh>();
+
   if (!std::filesystem::exists(mesh_file_path)) {
     std::cout << "[ERROR][CurvatureEstimator::toMeshTotalCurvature]"
               << std::endl;
     std::cout << "\t mesh file not exist!" << std::endl;
     std::cout << "\t mesh_file_path: " << mesh_file_path << std::endl;
-    return false;
+    return mesh_ptr;
   }
-
-  std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr =
-      std::make_shared<open3d::geometry::TriangleMesh>();
 
   if (!open3d::io::ReadTriangleMesh(mesh_file_path, *mesh_ptr)) {
     std::cout << "[ERROR][CurvatureEstimator::toMeshTotalCurvature]"
@@ -25,7 +26,7 @@ CurvatureEstimator::toMeshTotalCurvature(const std::string &mesh_file_path) {
     std::cout << "\t ReadTriangleMesh failed!" << std::endl;
     std::cout << "\t mesh_file_path: " << mesh_file_path << std::endl;
     mesh_ptr.reset();
-    return -1;
+    return mesh_ptr;
   }
 
   mesh_ptr->ComputeVertexNormals();
@@ -33,18 +34,17 @@ CurvatureEstimator::toMeshTotalCurvature(const std::string &mesh_file_path) {
   Eigen::MatrixXd V, N;
   Eigen::MatrixXi F;
   Eigen::VectorXd k_S;
-  open3d::geometry::TriangleMesh mesh = *mesh_ptr;
   V = Eigen::Map<
       const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
-      reinterpret_cast<const double *>(mesh.vertices_.data()),
-      mesh.vertices_.size(), 3);
+      reinterpret_cast<const double *>(mesh_ptr->vertices_.data()),
+      mesh_ptr->vertices_.size(), 3);
   F = Eigen::Map<const Eigen::Matrix<int, Eigen::Dynamic, 3, Eigen::RowMajor>>(
-      reinterpret_cast<const int *>(mesh.triangles_.data()),
-      mesh.triangles_.size(), 3);
+      reinterpret_cast<const int *>(mesh_ptr->triangles_.data()),
+      mesh_ptr->triangles_.size(), 3);
   N = Eigen::Map<
       const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
-      reinterpret_cast<const double *>(mesh.vertex_normals_.data()),
-      mesh.vertex_normals_.size(), 3);
+      reinterpret_cast<const double *>(mesh_ptr->vertex_normals_.data()),
+      mesh_ptr->vertex_normals_.size(), 3);
 
   // calculate total curvature on triangle mesh
   open3d::geometry::TotalCurvature::TotalCurvatureMesh(V, F, N, k_S);
@@ -55,31 +55,29 @@ CurvatureEstimator::toMeshTotalCurvature(const std::string &mesh_file_path) {
   double max_val = k_S_vis.maxCoeff();
 
   // Convert scalar values into colormap and assign to the vertices
-  mesh.vertex_colors_.resize(mesh.vertices_.size());
-  for (size_t i = 0; i < mesh.vertices_.size(); ++i) {
-    mesh.vertex_colors_[i] = scalar_to_color(k_S_vis(i), min_val, max_val);
+  mesh_ptr->vertex_colors_.resize(mesh_ptr->vertices_.size());
+  for (size_t i = 0; i < mesh_ptr->vertices_.size(); ++i) {
+    mesh_ptr->vertex_colors_[i] = scalar_to_color(k_S_vis(i), min_val, max_val);
   }
 
-  // Visualize the mesh
-  open3d::visualization::DrawGeometries(
-      {std::make_shared<open3d::geometry::TriangleMesh>(mesh)},
-      "Mesh with Colormap");
+  open3d::visualization::DrawGeometries({mesh_ptr}, "Mesh with Colormap");
 
-  return true;
+  return mesh_ptr;
 }
 
-const bool
+std::shared_ptr<open3d::geometry::PointCloud>
 CurvatureEstimator::toPcdTotalCurvature(const std::string &pcd_file_path) {
+  std::shared_ptr<open3d::geometry::PointCloud> point_cloud_ptr =
+      std::make_shared<open3d::geometry::PointCloud>();
+
   if (!std::filesystem::exists(pcd_file_path)) {
     std::cout << "[ERROR][CurvatureEstimator::toPcdTotalCurvature]"
               << std::endl;
     std::cout << "\t pcd file not exist!" << std::endl;
     std::cout << "\t pcd_file_path: " << pcd_file_path << std::endl;
-    return false;
+    return point_cloud_ptr;
   }
 
-  std::shared_ptr<open3d::geometry::PointCloud> point_cloud_ptr =
-      std::make_shared<open3d::geometry::PointCloud>();
   open3d::io::ReadPointCloud(pcd_file_path, *point_cloud_ptr);
 
   if (!point_cloud_ptr->HasNormals()) {
@@ -111,11 +109,8 @@ CurvatureEstimator::toPcdTotalCurvature(const std::string &pcd_file_path) {
         scalar_to_color(k_S_PCD_vis(i), min_val_pcd, max_val_pcd);
   }
 
-  auto vis = std::make_shared<open3d::visualization::Visualizer>();
-  vis->CreateVisualizerWindow("Colored Point Cloud", 800, 600);
-  vis->AddGeometry(point_cloud_ptr);
-  vis->Run();
-  vis->DestroyVisualizerWindow();
+  open3d::visualization::DrawGeometries({point_cloud_ptr},
+                                        "PointCloud with Colormap");
 
-  return true;
+  return point_cloud_ptr;
 }

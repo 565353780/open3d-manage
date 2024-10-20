@@ -3,6 +3,9 @@
 #include "noise_dataset_loader.h"
 #include <iostream>
 #include <limits>
+#include <memory>
+#include <open3d/geometry/PointCloud.h>
+#include <open3d/geometry/TriangleMesh.h>
 #include <string>
 
 int denoisePointCloud() {
@@ -92,12 +95,16 @@ int estimateCurvature() {
 
   CurvatureEstimator curvature_estimator;
 
-  if (!curvature_estimator.toMeshTotalCurvature(mesh_file_path)) {
+  std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr =
+      curvature_estimator.toMeshTotalCurvature(mesh_file_path);
+  if (mesh_ptr->IsEmpty()) {
     std::cout << " toMeshTotalCurvature failed!" << std::endl;
     return -1;
   }
 
-  if (!curvature_estimator.toPcdTotalCurvature(pcd_file_path)) {
+  std::shared_ptr<open3d::geometry::PointCloud> point_cloud_ptr =
+      curvature_estimator.toPcdTotalCurvature(pcd_file_path);
+  if (point_cloud_ptr->IsEmpty()) {
     std::cout << " toPcdTotalCurvature failed!" << std::endl;
     return -1;
   }

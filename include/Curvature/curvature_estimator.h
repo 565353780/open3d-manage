@@ -9,9 +9,11 @@ class CurvatureEstimator {
 public:
   CurvatureEstimator() {};
 
-  const bool toMeshTotalCurvature(const std::string &mesh_file_path);
+  std::shared_ptr<open3d::geometry::TriangleMesh>
+  toMeshTotalCurvature(const std::string &mesh_file_path);
 
-  const bool toPcdTotalCurvature(const std::string &pcd_file_path);
+  std::shared_ptr<open3d::geometry::PointCloud>
+  toPcdTotalCurvature(const std::string &pcd_file_path);
 
   // private:
 };
