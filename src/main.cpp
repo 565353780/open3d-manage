@@ -1,6 +1,9 @@
 #include "Curvature/curvature_estimator.h"
+#include "Curvature/io.h"
+#include "Curvature/render.h"
 #include "filter.h"
 #include "noise_dataset_loader.h"
+#include <Eigen/src/Core/Matrix.h>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -96,18 +99,39 @@ int estimateCurvature() {
   CurvatureEstimator curvature_estimator;
 
   std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr =
-      curvature_estimator.toMeshTotalCurvature(mesh_file_path);
+      loadMeshFile(mesh_file_path);
+
   if (mesh_ptr->IsEmpty()) {
+    std::cout << " loadMeshFile failed!" << std::endl;
+    return -1;
+  }
+
+  const Eigen::VectorXd mesh_curvatures =
+      curvature_estimator.toMeshTotalCurvature(mesh_ptr);
+  if (mesh_curvatures.size() == 0) {
     std::cout << " toMeshTotalCurvature failed!" << std::endl;
     return -1;
   }
 
-  std::shared_ptr<open3d::geometry::PointCloud> point_cloud_ptr =
-      curvature_estimator.toPcdTotalCurvature(pcd_file_path);
-  if (point_cloud_ptr->IsEmpty()) {
+  renderMeshCurvature(mesh_ptr, mesh_curvatures);
+
+  std::shared_ptr<open3d::geometry::PointCloud> pcd_ptr =
+      loadPcdFile(pcd_file_path);
+
+  if (pcd_ptr->IsEmpty()) {
+    std::cout << " loadPcdFile failed!" << std::endl;
+    return -1;
+  }
+
+  const Eigen::VectorXd pcd_curvatures =
+      curvature_estimator.toPcdTotalCurvature(pcd_ptr);
+
+  if (pcd_curvatures.size() == 0) {
     std::cout << " toPcdTotalCurvature failed!" << std::endl;
     return -1;
   }
+
+  renderPointCloudCurvature(pcd_ptr, pcd_curvatures);
 
   return 1;
 }

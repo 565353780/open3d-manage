@@ -1,39 +1,27 @@
 #include "Curvature/curvature_estimator.h"
 #include "Curvature/TotalCurvature.h"
 #include "Curvature/TotalCurvaturePointCloud.h"
-#include "Curvature/render.h"
-#include <filesystem>
+#include "Curvature/io.h"
 #include <iostream>
 #include <memory>
 #include <open3d/geometry/PointCloud.h>
 
-std::shared_ptr<open3d::geometry::TriangleMesh>
-CurvatureEstimator::toMeshTotalCurvature(const std::string &mesh_file_path) {
-  std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr =
-      std::make_shared<open3d::geometry::TriangleMesh>();
+const Eigen::VectorXd CurvatureEstimator::toMeshTotalCurvature(
+    std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr) {
+  Eigen::VectorXd k_S;
 
-  if (!std::filesystem::exists(mesh_file_path)) {
+  if (mesh_ptr->IsEmpty()) {
     std::cout << "[ERROR][CurvatureEstimator::toMeshTotalCurvature]"
               << std::endl;
-    std::cout << "\t mesh file not exist!" << std::endl;
-    std::cout << "\t mesh_file_path: " << mesh_file_path << std::endl;
-    return mesh_ptr;
-  }
+    std::cout << "\t mesh ptr is empty!" << std::endl;
 
-  if (!open3d::io::ReadTriangleMesh(mesh_file_path, *mesh_ptr)) {
-    std::cout << "[ERROR][CurvatureEstimator::toMeshTotalCurvature]"
-              << std::endl;
-    std::cout << "\t ReadTriangleMesh failed!" << std::endl;
-    std::cout << "\t mesh_file_path: " << mesh_file_path << std::endl;
-    mesh_ptr.reset();
-    return mesh_ptr;
+    return k_S;
   }
 
   mesh_ptr->ComputeVertexNormals();
 
   Eigen::MatrixXd V, N;
   Eigen::MatrixXi F;
-  Eigen::VectorXd k_S;
   V = Eigen::Map<
       const Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(
       reinterpret_cast<const double *>(mesh_ptr->vertices_.data()),
@@ -49,43 +37,27 @@ CurvatureEstimator::toMeshTotalCurvature(const std::string &mesh_file_path) {
   // calculate total curvature on triangle mesh
   open3d::geometry::TotalCurvature::TotalCurvatureMesh(V, F, N, k_S);
 
-  // Find the min and max values in scalar_values
-  Eigen::VectorXd k_S_vis = k_S.array().pow(0.0425);
-  double min_val = k_S_vis.minCoeff();
-  double max_val = k_S_vis.maxCoeff();
-
-  // Convert scalar values into colormap and assign to the vertices
-  mesh_ptr->vertex_colors_.resize(mesh_ptr->vertices_.size());
-  for (size_t i = 0; i < mesh_ptr->vertices_.size(); ++i) {
-    mesh_ptr->vertex_colors_[i] = scalar_to_color(k_S_vis(i), min_val, max_val);
-  }
-
-  open3d::visualization::DrawGeometries({mesh_ptr}, "Mesh with Colormap");
-
-  return mesh_ptr;
+  return k_S;
 }
 
-std::shared_ptr<open3d::geometry::PointCloud>
-CurvatureEstimator::toPcdTotalCurvature(const std::string &pcd_file_path) {
-  std::shared_ptr<open3d::geometry::PointCloud> point_cloud_ptr =
-      std::make_shared<open3d::geometry::PointCloud>();
+const Eigen::VectorXd CurvatureEstimator::toPcdTotalCurvature(
+    std::shared_ptr<open3d::geometry::PointCloud> &pcd_ptr) {
+  Eigen::VectorXd k_S_PCD;
 
-  if (!std::filesystem::exists(pcd_file_path)) {
+  if (pcd_ptr->IsEmpty()) {
     std::cout << "[ERROR][CurvatureEstimator::toPcdTotalCurvature]"
               << std::endl;
-    std::cout << "\t pcd file not exist!" << std::endl;
-    std::cout << "\t pcd_file_path: " << pcd_file_path << std::endl;
-    return point_cloud_ptr;
+    std::cout << "\t pcd ptr is empty!" << std::endl;
+
+    return k_S_PCD;
   }
 
-  open3d::io::ReadPointCloud(pcd_file_path, *point_cloud_ptr);
-
-  if (!point_cloud_ptr->HasNormals()) {
-    point_cloud_ptr->EstimateNormals();
+  if (!pcd_ptr->HasNormals()) {
+    pcd_ptr->EstimateNormals();
   }
 
-  std::vector<Eigen::Vector3d> points_v = point_cloud_ptr->points_;
-  std::vector<Eigen::Vector3d> points_n = point_cloud_ptr->normals_;
+  std::vector<Eigen::Vector3d> points_v = pcd_ptr->points_;
+  std::vector<Eigen::Vector3d> points_n = pcd_ptr->normals_;
   Eigen::MatrixXd V_PCD(points_v.size(), 3);
   Eigen::MatrixXd N_PCD(points_v.size(), 3);
   for (size_t i = 0; i < points_v.size(); ++i) {
@@ -93,24 +65,50 @@ CurvatureEstimator::toPcdTotalCurvature(const std::string &pcd_file_path) {
     N_PCD.row(i) = points_n[i];
   }
 
-  Eigen::VectorXd k_S_PCD(V_PCD.rows());
+  k_S_PCD.resize(V_PCD.rows());
 
   open3d::geometry::TotalCurvaturePointCloud::TotalCurvaturePCD(V_PCD, N_PCD,
                                                                 k_S_PCD, 20);
 
-  // Apply the color map to the point cloud
-  // Find the min and max values in scalar_values
-  Eigen::VectorXd k_S_PCD_vis = k_S_PCD.array().abs().pow(0.0425);
-  double min_val_pcd = k_S_PCD_vis.minCoeff();
-  double max_val_pcd = k_S_PCD_vis.maxCoeff();
-  point_cloud_ptr->colors_.resize(point_cloud_ptr->points_.size());
-  for (int i = 0; i < point_cloud_ptr->points_.size(); ++i) {
-    point_cloud_ptr->colors_[i] =
-        scalar_to_color(k_S_PCD_vis(i), min_val_pcd, max_val_pcd);
+  return k_S_PCD;
+}
+
+const Eigen::VectorXd CurvatureEstimator::toMeshFileTotalCurvature(
+    const std::string &mesh_file_path) {
+  Eigen::VectorXd mesh_total_curvature;
+
+  std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr =
+      loadMeshFile(mesh_file_path);
+
+  if (mesh_ptr->IsEmpty()) {
+    std::cout << "[ERROR][CurvatureEstimator::toMeshFileTotalCurvature]"
+              << std::endl;
+    std::cout << "\t loadMeshFile failed!" << std::endl;
+
+    return mesh_total_curvature;
   }
 
-  open3d::visualization::DrawGeometries({point_cloud_ptr},
-                                        "PointCloud with Colormap");
+  mesh_total_curvature = toMeshTotalCurvature(mesh_ptr);
 
-  return point_cloud_ptr;
+  return mesh_total_curvature;
+}
+
+const Eigen::VectorXd
+CurvatureEstimator::toPcdFileTotalCurvature(const std::string &pcd_file_path) {
+  Eigen::VectorXd pcd_total_curvature;
+
+  std::shared_ptr<open3d::geometry::PointCloud> pcd_ptr =
+      loadPcdFile(pcd_file_path);
+
+  if (pcd_ptr->IsEmpty()) {
+    std::cout << "[ERROR][CurvatureEstimator::toPcdFileTotalCurvature]"
+              << std::endl;
+    std::cout << "\t loadPcdFile failed!" << std::endl;
+
+    return pcd_total_curvature;
+  }
+
+  pcd_total_curvature = toPcdTotalCurvature(pcd_ptr);
+
+  return pcd_total_curvature;
 }
