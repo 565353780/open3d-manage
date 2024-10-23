@@ -3,6 +3,7 @@ set(CMAKE_CXX_FLAGS "-std=c++17 -O0")
 project(Open3DManage)
 
 set(Open3D_ROOT ../../open3d-manage/3rd/open3d-devel-linux/)
+set(OpenMeshROOT ../openmesh-manage/3rd/OpenMesh-11.0.0)
 
 set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -36,6 +37,8 @@ find_package(CGAL REQUIRED)
 
 # Include CGAL's directories and libraries
 include(${CGAL_USE_FILE})
+
+include_directories(${OpenMeshROOT}/src/)
 
 find_package(Python COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG)
@@ -71,3 +74,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE pybind11::embed)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${CGAL_LIBRARIES})
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/${OpenMeshROOT}/build/Build/lib/libOpenMeshCore.so
+  ${CMAKE_CURRENT_SOURCE_DIR}/${OpenMeshROOT}/build/Build/lib/libOpenMeshTools.so)

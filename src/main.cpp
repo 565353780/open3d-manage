@@ -1,6 +1,7 @@
 #include "Curvature/curvature_estimator.h"
 #include "Curvature/io.h"
 #include "Curvature/render.h"
+#include "MeshSplit/mesh_spliter.h"
 #include "filter.h"
 #include "noise_dataset_loader.h"
 #include <Eigen/src/Core/Matrix.h>
@@ -136,10 +137,41 @@ int estimateCurvature() {
   return 1;
 }
 
+int splitMesh() {
+  const std::string mesh_file_path = "../data/cow.ply";
+  const std::string pcd_file_path = "../data/cow_points.ply";
+
+  CurvatureEstimator curvature_estimator;
+  MeshSpliter mesh_spliter;
+
+  std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr =
+      loadMeshFile(mesh_file_path);
+
+  if (mesh_ptr->IsEmpty()) {
+    std::cout << " loadMeshFile failed!" << std::endl;
+    return -1;
+  }
+
+  const Eigen::VectorXd mesh_curvatures =
+      curvature_estimator.toMeshTotalCurvature(mesh_ptr);
+  if (mesh_curvatures.size() == 0) {
+    std::cout << " toMeshTotalCurvature failed!" << std::endl;
+    return -1;
+  }
+
+  // renderMeshCurvature(mesh_ptr, mesh_curvatures);
+
+  mesh_spliter.splitMeshByCurvature(mesh_ptr, mesh_curvatures);
+
+  return 1;
+}
+
 int main() {
   // denoisePointCloud();
 
-  estimateCurvature();
+  // estimateCurvature();
+
+  splitMesh();
 
   return 1;
 }
