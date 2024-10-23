@@ -1,7 +1,6 @@
 #include "MeshSplit/mesh_spliter.h"
 #include "MeshSplit/idx_curvature.h"
 #include "MeshSplit/sub_mesh_manager.h"
-#include "MeshSplit/trans.h"
 #include <algorithm>
 
 const bool MeshSpliter::splitMeshByCurvature(
@@ -29,9 +28,7 @@ const bool MeshSpliter::splitMeshByCurvature(
       unused_curvatures.begin(), unused_curvatures.end(),
       [](IdxCurvature a, IdxCurvature b) { return a.curvature > b.curvature; });
 
-  TriMesh mesh = toOpenMesh(mesh_ptr);
-
-  SubMeshManager sub_mesh_manager(mesh);
+  SubMeshManager sub_mesh_manager(mesh_ptr);
 
   // 按照曲率从小到大逐点检查
   while (!unused_curvatures.empty()) {
@@ -42,11 +39,11 @@ const bool MeshSpliter::splitMeshByCurvature(
 
     sub_mesh_manager.addVertexIntoSubSet(current_vertex_idx, curvatures_vec,
                                          max_merge_curvature);
-
-    std::cout << unused_curvatures.size() << std::endl;
   }
 
   std::cout << sub_mesh_manager.sub_mesh_face_idx_set_map.size() << std::endl;
+
+  sub_mesh_manager.renderSplitMesh();
 
   return true;
 }

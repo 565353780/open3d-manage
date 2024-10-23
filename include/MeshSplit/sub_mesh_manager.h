@@ -1,15 +1,17 @@
 #pragma once
 #include "MeshSplit/trans.h"
+#include <open3d/Open3D.h>
 
 class SubMeshManager {
 public:
   SubMeshManager() {};
 
-  SubMeshManager(TriMesh &mesh_value);
+  SubMeshManager(std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr);
 
   const bool reset();
 
-  const bool loadOpenMesh(TriMesh &mesh_value);
+  const bool
+  loadMesh(std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr);
 
   const int getVertexSetIdx(const int &vertex_idx);
 
@@ -28,7 +30,10 @@ public:
                                  const std::vector<double> &curvatures_vec,
                                  const float &max_merge_curvature);
 
+  const bool renderSplitMesh();
+
 public:
+  open3d::geometry::TriangleMesh o3d_mesh;
   TriMesh mesh;
 
   std::vector<int> vertex_set_idx_vec;

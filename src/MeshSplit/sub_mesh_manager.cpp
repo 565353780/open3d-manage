@@ -1,10 +1,14 @@
 #include "MeshSplit/sub_mesh_manager.h"
+#include <random>
 
-SubMeshManager::SubMeshManager(TriMesh &mesh_value) {
-  loadOpenMesh(mesh_value);
+SubMeshManager::SubMeshManager(
+    std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr) {
+  loadMesh(mesh_ptr);
 }
 
 const bool SubMeshManager::reset() {
+  o3d_mesh.Clear();
+
   vertex_set_idx_vec.clear();
   sub_mesh_face_idx_set_map.clear();
   new_sub_set_idx = -1;
@@ -12,10 +16,12 @@ const bool SubMeshManager::reset() {
   return true;
 }
 
-const bool SubMeshManager::loadOpenMesh(TriMesh &mesh_value) {
+const bool SubMeshManager::loadMesh(
+    std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr) {
   reset();
+  o3d_mesh = open3d::geometry::TriangleMesh(*mesh_ptr);
 
-  mesh = mesh_value;
+  mesh = toOpenMesh(mesh_ptr);
   vertex_set_idx_vec = std::vector<int>(mesh.n_vertices(), -1);
 
   return true;
@@ -115,6 +121,33 @@ SubMeshManager::addVertexIntoSubSet(const int &vertex_idx,
   }
 
   updateVertexNeighboorInfo(vertex_idx, curvatures_vec, max_merge_curvature);
+
+  return true;
+}
+
+const bool SubMeshManager::renderSplitMesh() {
+  const int vertex_num = o3d_mesh.vertices_.size();
+
+  std::vector<Eigen::Vector3d> random_set_colors;
+  random_set_colors.reserve(sub_mesh_face_idx_set_map.size());
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+  for (int i = 0; i < vertex_num; ++i) {
+    random_set_colors.emplace_back(
+        Eigen::Vector3d(dist(gen), dist(gen), dist(gen)));
+  }
+
+  o3d_mesh.vertex_colors_.resize(vertex_num);
+  for (int i = 0; i < o3d_mesh.vertices_.size(); ++i) {
+    o3d_mesh.vertex_colors_[i] = random_set_colors[vertex_set_idx_vec[i]];
+  }
+
+  open3d::visualization::DrawGeometries(
+      {std::make_shared<open3d::geometry::TriangleMesh>(o3d_mesh)},
+      "[SubMeshManager::renderSplitMesh] sub meshes");
 
   return true;
 }
