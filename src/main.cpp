@@ -138,8 +138,10 @@ int estimateCurvature() {
 }
 
 int splitMesh() {
-  const std::string mesh_file_path = "../data/cow.ply";
-  const std::string pcd_file_path = "../data/cow_points.ply";
+  std::string mesh_file_path = "../data/cow.ply";
+  mesh_file_path = "/home/chli/Dataset/ManifoldMesh/ShapeNet/02691156/"
+                   "1026dd1b26120799107f68a9cb8e3c.obj";
+  const int max_merge_curvature = 1000.0;
 
   CurvatureEstimator curvature_estimator;
   MeshSpliter mesh_spliter;
@@ -161,7 +163,8 @@ int splitMesh() {
 
   // renderMeshCurvature(mesh_ptr, mesh_curvatures);
 
-  mesh_spliter.splitMeshByCurvature(mesh_ptr, mesh_curvatures);
+  mesh_spliter.splitMeshByCurvature(mesh_ptr, mesh_curvatures,
+                                    max_merge_curvature);
 
   return 1;
 }

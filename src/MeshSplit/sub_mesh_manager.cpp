@@ -1,4 +1,5 @@
 #include "MeshSplit/sub_mesh_manager.h"
+#include <algorithm>
 #include <random>
 
 SubMeshManager::SubMeshManager(
@@ -29,6 +30,13 @@ const bool SubMeshManager::loadMesh(
 
 const int SubMeshManager::getVertexSetIdx(const int &vertex_idx) {
   return vertex_set_idx_vec[vertex_idx];
+}
+
+const int SubMeshManager::getFreeVertexNum() {
+  const int free_vertex_num =
+      std::count(vertex_set_idx_vec.begin(), vertex_set_idx_vec.end(), -1);
+
+  return free_vertex_num;
 }
 
 const bool SubMeshManager::createNewSubSet() {

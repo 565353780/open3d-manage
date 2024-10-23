@@ -15,6 +15,8 @@ public:
 
   const int getVertexSetIdx(const int &vertex_idx);
 
+  const int getFreeVertexNum();
+
   const bool createNewSubSet();
 
   const bool addVertexIntoNewSubSet(const int &vertex_idx);
