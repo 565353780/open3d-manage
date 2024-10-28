@@ -49,7 +49,6 @@ include_directories(./3rd/NumCpp/include/)
 
 file(GLOB_RECURSE SRC ./src/*.cpp)
 list(FILTER SRC EXCLUDE REGEX "main.cpp")
-file(GLOB_RECURSE CURVATURE_SRC ./src/Curvature/*.cpp)
 
 # On Windows if BUILD_SHARED_LIBS is enabled, copy .dll files to the executable directory
 if(WIN32)
@@ -63,7 +62,7 @@ if(WIN32)
     endif()
 endif()
 
-add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC} ${CURVATURE_SRC})
+add_executable(${PROJECT_NAME} ./src/main.cpp ${SRC})
 
 find_library(TORCH_PYTHON_LIBRARY torch_python PATH "${TORCH_INSTALL_PREFIX}/lib")
 
