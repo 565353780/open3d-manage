@@ -46,15 +46,26 @@ const bool SubMeshManager::createNewSubSet() {
   return true;
 }
 
-const bool SubMeshManager::addVertexIntoNewSubSet(const int &vertex_idx) {
-  vertex_set_idx_vec[vertex_idx] = new_sub_set_idx;
+const bool
+SubMeshManager::setSubMeshIdxForNeighboorFaces(const int &vertex_idx) {
+  const int vertex_set_idx = vertex_set_idx_vec[vertex_idx];
+  if (vertex_set_idx == -1) {
+    return true;
+  }
 
-  // 将其相邻的面全部归类
   for (TriMesh::VertexFaceIter vf_it =
            mesh.vf_iter(mesh.vertex_handle(vertex_idx));
        vf_it.is_valid(); ++vf_it) {
-    sub_mesh_face_idx_set_map[new_sub_set_idx].insert(vf_it->idx());
+    sub_mesh_face_idx_set_map[vertex_set_idx].insert(vf_it->idx());
   }
+
+  return true;
+}
+
+const bool SubMeshManager::addVertexIntoNewSubSet(const int &vertex_idx) {
+  vertex_set_idx_vec[vertex_idx] = new_sub_set_idx;
+
+  setSubMeshIdxForNeighboorFaces(vertex_idx);
 
   return true;
 }
@@ -95,6 +106,9 @@ const bool SubMeshManager::updateVertexNeighboorInfo(
     for (TriMesh::FaceVertexIter fv_it = mesh.fv_iter(*vf_it); fv_it.is_valid();
          ++fv_it) {
       const int neighboor_vertex_idx = fv_it->idx();
+
+      setSubMeshIdxForNeighboorFaces(neighboor_vertex_idx);
+
       const int neighboor_vertex_set_idx =
           getVertexSetIdx(neighboor_vertex_idx);
 
@@ -132,28 +146,90 @@ SubMeshManager::addVertexIntoSubSet(const int &vertex_idx,
   return true;
 }
 
+const std::vector<int> SubMeshManager::toUnusedFaceIdxVec() {
+  const int face_num = o3d_mesh_ptr->triangles_.size();
+
+  std::vector<bool> face_used_vec(face_num, false);
+  for (auto it = sub_mesh_face_idx_set_map.begin();
+       it != sub_mesh_face_idx_set_map.end(); ++it) {
+    const int sub_mesh_idx = it->first;
+    const std::set<int> sub_mesh_face_idx_set = it->second;
+
+    for (int i : sub_mesh_face_idx_set) {
+      face_used_vec[i] = true;
+    }
+  }
+
+  std::vector<int> unused_face_idx_vec;
+  for (int i = 0; i < face_num; ++i) {
+    if (!face_used_vec[i]) {
+      unused_face_idx_vec.emplace_back(i);
+    }
+  }
+
+  return unused_face_idx_vec;
+}
+
+const bool SubMeshManager::checkSubMeshState() {
+  std::cout << sub_mesh_face_idx_set_map.size() << std::endl;
+
+  std::cout << "CHECK vertex_set_idx_vec -1 num = "
+            << std::count(vertex_set_idx_vec.begin(), vertex_set_idx_vec.end(),
+                          -1)
+            << std::endl;
+
+  const std::vector<int> unused_face_idx_vec = toUnusedFaceIdxVec();
+  std::cout << "CHECK unused face idx num = " << unused_face_idx_vec.size()
+            << " / " << o3d_mesh_ptr->triangles_.size() << std::endl;
+
+  return true;
+}
+
+const bool SubMeshManager::paintFaceVertices(const int &face_idx,
+                                             const Eigen::Vector3d &color) {
+  if (o3d_mesh_ptr->vertex_colors_.size() != o3d_mesh_ptr->vertices_.size()) {
+    o3d_mesh_ptr->vertex_colors_.resize(o3d_mesh_ptr->vertices_.size(),
+                                        Eigen::Vector3d(0.0, 0.0, 0.0));
+  }
+
+  for (TriMesh::FaceVertexIter fv_it = mesh.fv_iter(mesh.face_handle(face_idx));
+       fv_it.is_valid(); ++fv_it) {
+    const int neighboor_vertex_idx = fv_it->idx();
+
+    o3d_mesh_ptr->vertex_colors_[neighboor_vertex_idx] = color;
+  }
+
+  return true;
+}
+
 const bool SubMeshManager::paintSubMesh() {
-  const int vertex_num = o3d_mesh_ptr->vertices_.size();
+  const int face_num = o3d_mesh_ptr->triangles_.size();
 
   std::vector<Eigen::Vector3d> random_set_colors;
-  random_set_colors.reserve(sub_mesh_face_idx_set_map.size() + 1);
-
-  random_set_colors.emplace_back(Eigen::Vector3d(0.0, 0.0, 0.0));
+  random_set_colors.reserve(sub_mesh_face_idx_set_map.size());
 
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-  for (int i = 0; i < vertex_num; ++i) {
+  for (int i = 0; i < sub_mesh_face_idx_set_map.size(); ++i) {
     random_set_colors.emplace_back(
         Eigen::Vector3d(dist(gen), dist(gen), dist(gen)));
   }
 
-  o3d_mesh_ptr->vertex_colors_.resize(vertex_num);
-  for (int i = 0; i < o3d_mesh_ptr->vertices_.size(); ++i) {
-    const int vertex_set_idx = vertex_set_idx_vec[i] + 1;
+  o3d_mesh_ptr->vertex_colors_.resize(o3d_mesh_ptr->vertices_.size(),
+                                      Eigen::Vector3d(0.0, 0.0, 0.0));
+  int current_paint_sub_mesh_idx = 0;
+  for (auto it = sub_mesh_face_idx_set_map.begin();
+       it != sub_mesh_face_idx_set_map.end(); ++it) {
+    const int sub_mesh_idx = it->first;
+    const std::set<int> sub_mesh_face_idx_set = it->second;
 
-    o3d_mesh_ptr->vertex_colors_[i] = random_set_colors[vertex_set_idx];
+    for (int i : sub_mesh_face_idx_set) {
+      paintFaceVertices(i, random_set_colors[current_paint_sub_mesh_idx]);
+    }
+
+    ++current_paint_sub_mesh_idx;
   }
 
   return true;

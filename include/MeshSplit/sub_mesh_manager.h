@@ -19,6 +19,8 @@ public:
 
   const bool createNewSubSet();
 
+  const bool setSubMeshIdxForNeighboorFaces(const int &vertex_idx);
+
   const bool addVertexIntoNewSubSet(const int &vertex_idx);
 
   const bool mergeSubSet(const int &set_idx_1, const int &set_idx_2);
@@ -31,6 +33,13 @@ public:
   const bool addVertexIntoSubSet(const int &vertex_idx,
                                  const std::vector<double> &curvatures_vec,
                                  const float &max_merge_curvature);
+
+  const std::vector<int> toUnusedFaceIdxVec();
+
+  const bool checkSubMeshState();
+
+  const bool paintFaceVertices(const int &face_idx,
+                               const Eigen::Vector3d &color);
 
   const bool paintSubMesh();
   const bool renderSubMeshes();

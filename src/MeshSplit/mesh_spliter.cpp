@@ -45,7 +45,7 @@ const std::unordered_map<int, std::set<int>> MeshSpliter::splitMeshByCurvature(
                                          max_merge_curvature);
   }
 
-  std::cout << sub_mesh_manager.sub_mesh_face_idx_set_map.size() << std::endl;
+  // sub_mesh_manager.checkSubMeshState();
 
   sub_mesh_manager.paintSubMesh();
   // sub_mesh_manager.renderSubMeshes();
