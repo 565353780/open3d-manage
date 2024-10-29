@@ -141,7 +141,13 @@ int splitMesh() {
   std::string mesh_file_path = "../data/cow.ply";
   mesh_file_path = "/home/chli/Dataset/ManifoldMesh/ShapeNet/02691156/"
                    "1026dd1b26120799107f68a9cb8e3c.obj";
-  const int max_merge_curvature = 1000.0;
+  mesh_file_path = "/home/chli/Dataset/ManifoldMesh/ShapeNet-Crop/02691156/"
+                   "10155655850468db78d106ce0a280f87-crop.obj";
+  mesh_file_path = "/home/chli/Dataset/ManifoldMesh/ShapeNet-Crop/02691156/"
+                   "105f7f51e4140ee4b6b87e72ead132ed-crop.obj";
+  const int max_merge_curvature = 2000.0;
+  const std::string save_folder_path = "./output/sub_meshes/";
+  const bool overwrite = true;
 
   CurvatureEstimator curvature_estimator;
   MeshSpliter mesh_spliter;
@@ -163,9 +169,12 @@ int splitMesh() {
 
   // renderMeshCurvature(mesh_ptr, mesh_curvatures);
 
-  mesh_spliter.splitMeshByCurvature(mesh_ptr, mesh_curvatures,
-                                    max_merge_curvature);
+  const std::unordered_map<int, std::set<int>> sub_mesh_face_idx_set_map =
+      mesh_spliter.splitMeshByCurvature(mesh_ptr, mesh_curvatures,
+                                        max_merge_curvature);
 
+  mesh_spliter.saveSubMeshes(mesh_ptr, sub_mesh_face_idx_set_map,
+                             save_folder_path, overwrite);
   return 1;
 }
 

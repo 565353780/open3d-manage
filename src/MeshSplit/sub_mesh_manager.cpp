@@ -1,5 +1,6 @@
 #include "MeshSplit/sub_mesh_manager.h"
 #include <algorithm>
+#include <filesystem>
 #include <random>
 
 SubMeshManager::SubMeshManager(
@@ -8,8 +9,6 @@ SubMeshManager::SubMeshManager(
 }
 
 const bool SubMeshManager::reset() {
-  o3d_mesh.Clear();
-
   vertex_set_idx_vec.clear();
   sub_mesh_face_idx_set_map.clear();
   new_sub_set_idx = -1;
@@ -20,7 +19,7 @@ const bool SubMeshManager::reset() {
 const bool SubMeshManager::loadMesh(
     std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr) {
   reset();
-  o3d_mesh = open3d::geometry::TriangleMesh(*mesh_ptr);
+  o3d_mesh_ptr = mesh_ptr;
 
   mesh = toOpenMesh(mesh_ptr);
   vertex_set_idx_vec = std::vector<int>(mesh.n_vertices(), -1);
@@ -133,11 +132,13 @@ SubMeshManager::addVertexIntoSubSet(const int &vertex_idx,
   return true;
 }
 
-const bool SubMeshManager::renderSplitMesh() {
-  const int vertex_num = o3d_mesh.vertices_.size();
+const bool SubMeshManager::paintSubMesh() {
+  const int vertex_num = o3d_mesh_ptr->vertices_.size();
 
   std::vector<Eigen::Vector3d> random_set_colors;
-  random_set_colors.reserve(sub_mesh_face_idx_set_map.size());
+  random_set_colors.reserve(sub_mesh_face_idx_set_map.size() + 1);
+
+  random_set_colors.emplace_back(Eigen::Vector3d(0.0, 0.0, 0.0));
 
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -148,14 +149,45 @@ const bool SubMeshManager::renderSplitMesh() {
         Eigen::Vector3d(dist(gen), dist(gen), dist(gen)));
   }
 
-  o3d_mesh.vertex_colors_.resize(vertex_num);
-  for (int i = 0; i < o3d_mesh.vertices_.size(); ++i) {
-    o3d_mesh.vertex_colors_[i] = random_set_colors[vertex_set_idx_vec[i]];
+  o3d_mesh_ptr->vertex_colors_.resize(vertex_num);
+  for (int i = 0; i < o3d_mesh_ptr->vertices_.size(); ++i) {
+    const int vertex_set_idx = vertex_set_idx_vec[i] + 1;
+
+    o3d_mesh_ptr->vertex_colors_[i] = random_set_colors[vertex_set_idx];
+  }
+
+  return true;
+}
+
+const bool SubMeshManager::renderSubMeshes() {
+  if (!paintSubMesh()) {
+    std::cerr << "[ERROR][SubMeshManager::renderSubMeshes]" << std::endl;
+    std::cerr << "\t paintSubMesh failed!" << std::endl;
+    return false;
   }
 
   open3d::visualization::DrawGeometries(
-      {std::make_shared<open3d::geometry::TriangleMesh>(o3d_mesh)},
-      "[SubMeshManager::renderSplitMesh] sub meshes");
+      {o3d_mesh_ptr}, "[SubMeshManager::renderSubMeshes] sub meshes");
 
+  return true;
+}
+
+const bool SubMeshManager::savePaintedMesh(const std::string &save_file_path,
+                                           const bool &overwrite) {
+  if (std::filesystem::exists(save_file_path)) {
+    if (!overwrite) {
+      return true;
+    }
+
+    std::filesystem::remove(save_file_path);
+  }
+
+  const std::string save_folder_path =
+      std::filesystem::path(save_file_path).parent_path();
+  if (!std::filesystem::exists(save_folder_path)) {
+    std::filesystem::create_directories(save_folder_path);
+  }
+
+  open3d::io::WriteTriangleMesh(save_file_path, *o3d_mesh_ptr, true);
   return true;
 }

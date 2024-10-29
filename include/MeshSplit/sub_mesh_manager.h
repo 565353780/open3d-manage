@@ -32,10 +32,13 @@ public:
                                  const std::vector<double> &curvatures_vec,
                                  const float &max_merge_curvature);
 
-  const bool renderSplitMesh();
+  const bool paintSubMesh();
+  const bool renderSubMeshes();
+  const bool savePaintedMesh(const std::string &save_file_path,
+                             const bool &overwrite = false);
 
 public:
-  open3d::geometry::TriangleMesh o3d_mesh;
+  std::shared_ptr<open3d::geometry::TriangleMesh> o3d_mesh_ptr;
   TriMesh mesh;
 
   std::vector<int> vertex_set_idx_vec;
