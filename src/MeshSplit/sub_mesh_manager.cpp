@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <random>
+#include <unordered_map>
 
 SubMeshManager::SubMeshManager(
     std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr) {
@@ -142,6 +143,35 @@ SubMeshManager::addVertexIntoSubSet(const int &vertex_idx,
   }
 
   updateVertexNeighboorInfo(vertex_idx, curvatures_vec, max_merge_curvature);
+
+  return true;
+}
+
+const bool SubMeshManager::sortSubMeshIdxSetMap() {
+  std::vector<std::pair<int, int>> sub_mesh_idx_size_pair_vec;
+  sub_mesh_idx_size_pair_vec.reserve(sub_mesh_face_idx_set_map.size());
+  for (auto it = sub_mesh_face_idx_set_map.begin();
+       it != sub_mesh_face_idx_set_map.end(); ++it) {
+    const int sub_mesh_idx = it->first;
+    const std::set<int> sub_mesh_face_idx_set = it->second;
+
+    sub_mesh_idx_size_pair_vec.emplace_back(
+        std::pair<int, int>(sub_mesh_idx, sub_mesh_face_idx_set.size()));
+  }
+
+  std::sort(sub_mesh_idx_size_pair_vec.begin(),
+            sub_mesh_idx_size_pair_vec.end(),
+            [](std::pair<int, int> a, std::pair<int, int> b) {
+              return a.second > b.second;
+            });
+
+  std::unordered_map<int, std::set<int>> new_sub_mesh_face_idx_set_map;
+  for (int i = 0; i < sub_mesh_idx_size_pair_vec.size(); ++i) {
+    new_sub_mesh_face_idx_set_map[i] =
+        sub_mesh_face_idx_set_map[sub_mesh_idx_size_pair_vec[i].first];
+  }
+
+  sub_mesh_face_idx_set_map = new_sub_mesh_face_idx_set_map;
 
   return true;
 }

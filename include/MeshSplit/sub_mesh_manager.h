@@ -34,6 +34,8 @@ public:
                                  const std::vector<double> &curvatures_vec,
                                  const float &max_merge_curvature);
 
+  const bool sortSubMeshIdxSetMap();
+
   const std::vector<int> toUnusedFaceIdxVec();
 
   const bool checkSubMeshState();
