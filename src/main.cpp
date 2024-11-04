@@ -139,42 +139,27 @@ int estimateCurvature() {
 
 int splitMesh() {
   std::string mesh_file_path = "../data/cow.ply";
-  mesh_file_path = "/home/chli/Dataset/ManifoldMesh/ShapeNet/02691156/"
+  mesh_file_path = "/home/chli/Dataset/AMCAX/ManifoldMesh/ShapeNet/02691156/"
                    "1026dd1b26120799107f68a9cb8e3c.obj";
-  mesh_file_path = "/home/chli/Dataset/ManifoldMesh/ShapeNet-Crop/02691156/"
-                   "10155655850468db78d106ce0a280f87-crop.obj";
-  mesh_file_path = "/home/chli/Dataset/ManifoldMesh/ShapeNet-Crop/02691156/"
-                   "105f7f51e4140ee4b6b87e72ead132ed-crop.obj";
+  mesh_file_path =
+      "/home/chli/Dataset/AMCAX/ManifoldMesh/ShapeNet-Crop/02691156/"
+      "10155655850468db78d106ce0a280f87-crop.obj";
+  mesh_file_path =
+      "/home/chli/Dataset/AMCAX/ManifoldMesh/ShapeNet-Crop/02691156/"
+      "105f7f51e4140ee4b6b87e72ead132ed-crop.obj";
   const int max_merge_curvature = 2000.0;
   const std::string save_folder_path = "./output/sub_meshes/";
   const bool overwrite = true;
 
-  CurvatureEstimator curvature_estimator;
   MeshSpliter mesh_spliter;
 
-  std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr =
-      loadMeshFile(mesh_file_path);
-
-  if (mesh_ptr->IsEmpty()) {
-    std::cout << " loadMeshFile failed!" << std::endl;
+  if (!mesh_spliter.autoSplitMesh(mesh_file_path, save_folder_path,
+                                  max_merge_curvature, overwrite)) {
+    std::cerr << "[ERROR][main::splitMesh]" << std::endl;
+    std::cerr << "\t autoSplitMesh failed!" << std::endl;
     return -1;
   }
 
-  const Eigen::VectorXd mesh_curvatures =
-      curvature_estimator.toMeshTotalCurvature(mesh_ptr);
-  if (mesh_curvatures.size() == 0) {
-    std::cout << " toMeshTotalCurvature failed!" << std::endl;
-    return -1;
-  }
-
-  // renderMeshCurvature(mesh_ptr, mesh_curvatures);
-
-  const std::unordered_map<int, std::set<int>> sub_mesh_face_idx_set_map =
-      mesh_spliter.splitMeshByCurvature(mesh_ptr, mesh_curvatures,
-                                        max_merge_curvature);
-
-  mesh_spliter.saveSubMeshes(mesh_ptr, sub_mesh_face_idx_set_map,
-                             save_folder_path, overwrite);
   return 1;
 }
 

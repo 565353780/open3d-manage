@@ -212,6 +212,15 @@ const bool SubMeshManager::checkSubMeshState() {
   std::cout << "CHECK unused face idx num = " << unused_face_idx_vec.size()
             << " / " << o3d_mesh_ptr->triangles_.size() << std::endl;
 
+  std::cout << "CHECK sub set face num = " << std::endl;
+  for (auto it = sub_mesh_face_idx_set_map.begin();
+       it != sub_mesh_face_idx_set_map.end(); ++it) {
+    const int sub_mesh_idx = it->first;
+    const std::set<int> sub_mesh_face_idx_set = it->second;
+    std::cout << sub_mesh_idx << " -> " << sub_mesh_face_idx_set.size()
+              << std::endl;
+  }
+
   return true;
 }
 
