@@ -171,12 +171,16 @@ const bool MeshSpliter::autoSplitMesh(
     return false;
   }
 
+  // TODO: make this controllable later
+  const float min_value = float(mesh_curvatures.minCoeff());
+
   // renderMeshCurvature(mesh_ptr, mesh_curvatures);
 
   std::cout << "[INFO][MeshSpliter::autoSplitMesh]" << std::endl;
   std::cout << "\t start splitMeshByCurvature..." << std::endl;
   const std::unordered_map<int, std::set<int>> sub_mesh_face_idx_set_map =
-      splitMeshByCurvature(mesh_ptr, mesh_curvatures, max_merge_curvature,
+      splitMeshByCurvature(mesh_ptr, mesh_curvatures,
+                           max_merge_curvature * min_value,
                            save_painted_mesh_file_path);
   if (sub_mesh_face_idx_set_map.empty()) {
     std::cerr << "[ERROR][MeshSpliter::autoSplitMesh]" << std::endl;
