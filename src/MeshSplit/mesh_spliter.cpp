@@ -9,7 +9,8 @@
 
 const std::unordered_map<int, std::set<int>> MeshSpliter::splitMeshByCurvature(
     std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr,
-    const Eigen::VectorXd &mesh_curvatures, const float &max_merge_curvature) {
+    const Eigen::VectorXd &mesh_curvatures, const float &max_merge_curvature,
+    const std::string &save_painted_mesh_file_path) {
   const int vertex_num = mesh_ptr->vertices_.size();
 
   if (vertex_num != mesh_curvatures.size()) {
@@ -49,9 +50,20 @@ const std::unordered_map<int, std::set<int>> MeshSpliter::splitMeshByCurvature(
 
   // sub_mesh_manager.checkSubMeshState();
 
-  sub_mesh_manager.paintSubMesh();
-  // sub_mesh_manager.renderSubMeshes();
-  // sub_mesh_manager.savePaintedMesh("./output/painted_mesh.ply", true);
+  if (save_painted_mesh_file_path != "") {
+    const std::string save_painted_mesh_folder_path =
+        std::filesystem::path(save_painted_mesh_file_path)
+            .parent_path()
+            .string();
+
+    if (!std::filesystem::exists(save_painted_mesh_folder_path)) {
+      std::filesystem::create_directories(save_painted_mesh_folder_path);
+    }
+
+    sub_mesh_manager.paintSubMesh();
+    // sub_mesh_manager.renderSubMeshes();
+    sub_mesh_manager.savePaintedMesh(save_painted_mesh_file_path, true);
+  }
 
   return sub_mesh_manager.sub_mesh_face_idx_set_map;
 }
@@ -133,10 +145,10 @@ const bool MeshSpliter::saveSubMeshes(
   return true;
 }
 
-const bool MeshSpliter::autoSplitMesh(const std::string &mesh_file_path,
-                                      const std::string &save_folder_path,
-                                      const float &max_merge_curvature,
-                                      const bool &overwrite) {
+const bool MeshSpliter::autoSplitMesh(
+    const std::string &mesh_file_path, const std::string &save_folder_path,
+    const float &max_merge_curvature,
+    const std::string &save_painted_mesh_file_path, const bool &overwrite) {
   std::shared_ptr<open3d::geometry::TriangleMesh> mesh_ptr =
       loadMeshFile(mesh_file_path);
   if (mesh_ptr->IsEmpty()) {
@@ -148,6 +160,8 @@ const bool MeshSpliter::autoSplitMesh(const std::string &mesh_file_path,
 
   CurvatureEstimator curvature_estimator;
 
+  std::cout << "[INFO][MeshSpliter::autoSplitMesh]" << std::endl;
+  std::cout << "\t start toMeshTotalCurvature..." << std::endl;
   const Eigen::VectorXd mesh_curvatures =
       curvature_estimator.toMeshTotalCurvature(mesh_ptr);
   if (mesh_curvatures.size() == 0) {
@@ -159,8 +173,11 @@ const bool MeshSpliter::autoSplitMesh(const std::string &mesh_file_path,
 
   // renderMeshCurvature(mesh_ptr, mesh_curvatures);
 
+  std::cout << "[INFO][MeshSpliter::autoSplitMesh]" << std::endl;
+  std::cout << "\t start splitMeshByCurvature..." << std::endl;
   const std::unordered_map<int, std::set<int>> sub_mesh_face_idx_set_map =
-      splitMeshByCurvature(mesh_ptr, mesh_curvatures, max_merge_curvature);
+      splitMeshByCurvature(mesh_ptr, mesh_curvatures, max_merge_curvature,
+                           save_painted_mesh_file_path);
   if (sub_mesh_face_idx_set_map.empty()) {
     std::cerr << "[ERROR][MeshSpliter::autoSplitMesh]" << std::endl;
     std::cerr << "\t splitMeshByCurvature failed!" << std::endl;

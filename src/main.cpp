@@ -114,7 +114,7 @@ int estimateCurvature() {
     return -1;
   }
 
-  renderMeshCurvature(mesh_ptr, mesh_curvatures);
+  paintMeshCurvature(mesh_ptr, mesh_curvatures);
 
   std::shared_ptr<open3d::geometry::PointCloud> pcd_ptr =
       loadPcdFile(pcd_file_path);

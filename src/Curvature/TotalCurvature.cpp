@@ -7,7 +7,9 @@
 
 #include "Curvature/TotalCurvature.h"
 #include "Curvature/CurvatureUtils.h"
+#include <iostream>
 #include <omp.h>
+#include <string>
 
 namespace open3d {
 namespace geometry {
@@ -59,11 +61,22 @@ void TotalCurvature::TotalCurvatureMesh(const Eigen::MatrixXd &V,
   Eigen::VectorXd k_S_face(F_num);
   k_S.resize(V.rows());
 
-// per-face curvature
+  // per-face curvature
+  std::cout << "[INFO][Curvature::TotalCurvatureMesh]" << std::endl;
+  std::cout << "\t start PerTriangleLaplacianCurvature..." << std::endl;
+  int finished_num = 0;
 #pragma omp parallel for
   for (int i = 0; i < F_num; i++) {
     k_S_face(i) = TotalCurvature::PerTriangleLaplacianCurvature(i, V, N, F, A);
+    ++finished_num;
+    if (finished_num % 1000 == 0) {
+      std::cout << "\r\t running at " << std::to_string(finished_num) << " / "
+                << std::to_string(F_num) << ", "
+                << std::to_string(100.0 * finished_num / F_num) << "%...    ";
+    }
   }
+  std::cout << std::endl;
+
 // deriving per-vertex curvature
 #pragma omp parallel for
   for (int i = 0; i < V_num; i++) {

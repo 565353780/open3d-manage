@@ -17,8 +17,8 @@ class MeshNoiseAdder:
         if str(sample_point_num) in self.sampled_pcd_dict.keys():
             return True
 
-        sample_pcd = self.mesh.sample_points_uniformly(sample_point_num)
-        # sample_pcd = self.mesh.sample_points_poisson_disk(sample_point_num)
+        # sample_pcd = self.mesh.sample_points_uniformly(sample_point_num)
+        sample_pcd = self.mesh.sample_points_poisson_disk(sample_point_num)
 
         self.sampled_pcd_dict[str(sample_point_num)] = sample_pcd
         return True

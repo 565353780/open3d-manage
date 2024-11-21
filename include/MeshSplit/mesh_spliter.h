@@ -11,7 +11,8 @@ public:
   const std::unordered_map<int, std::set<int>> splitMeshByCurvature(
       std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr,
       const Eigen::VectorXd &mesh_curvatures,
-      const float &max_merge_curvature = 10.0);
+      const float &max_merge_curvature = 10.0,
+      const std::string &save_painted_mesh_file_path = "");
 
   std::shared_ptr<open3d::geometry::TriangleMesh>
   toSubMesh(std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr,
@@ -26,5 +27,6 @@ public:
   const bool autoSplitMesh(const std::string &mesh_file_path,
                            const std::string &save_folder_path,
                            const float &max_merge_curvature = 2000.0,
+                           const std::string &save_painted_mesh_file_path = "",
                            const bool &overwrite = false);
 };
