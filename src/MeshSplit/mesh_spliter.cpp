@@ -6,6 +6,8 @@
 #include "MeshSplit/sub_mesh_manager.h"
 #include <algorithm>
 #include <filesystem>
+#include <open3d/visualization/utility/DrawGeometry.h>
+#include <string>
 
 const std::unordered_map<int, std::set<int>> MeshSpliter::splitMeshByCurvature(
     std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr,
@@ -40,10 +42,40 @@ const std::unordered_map<int, std::set<int>> MeshSpliter::splitMeshByCurvature(
     const IdxCurvature current_unused_idx_curvature = unused_curvatures.back();
     unused_curvatures.pop_back();
 
-    const int current_vertex_idx = current_unused_idx_curvature.idx;
+    const int &current_vertex_idx = current_unused_idx_curvature.idx;
 
     sub_mesh_manager.addVertexIntoSubSet(current_vertex_idx, curvatures_vec,
                                          max_merge_curvature);
+    continue;
+
+    for (TriMesh::VertexFaceIter vf_it = sub_mesh_manager.mesh.vf_iter(
+             sub_mesh_manager.mesh.vertex_handle(current_vertex_idx));
+         vf_it.is_valid(); ++vf_it) {
+
+      for (TriMesh::FaceVertexIter fv_it =
+               sub_mesh_manager.mesh.fv_iter(*vf_it);
+           fv_it.is_valid(); ++fv_it) {
+
+        for (TriMesh::VertexFaceIter fvf_it =
+                 sub_mesh_manager.mesh.vf_iter(*fv_it);
+             fvf_it.is_valid(); ++fvf_it) {
+
+          for (TriMesh::FaceVertexIter fvfv_it =
+                   sub_mesh_manager.mesh.fv_iter(*fvf_it);
+               fvfv_it.is_valid(); ++fvfv_it) {
+            const int neighboor_vertex_idx = fvfv_it->idx();
+
+            sub_mesh_manager.addVertexIntoSubSet(
+                neighboor_vertex_idx, curvatures_vec, max_merge_curvature);
+            break;
+          }
+          break;
+        }
+        break;
+      }
+      break;
+    }
+    break;
   }
 
   sub_mesh_manager.sortSubMeshIdxSetMap();
@@ -83,21 +115,26 @@ std::shared_ptr<open3d::geometry::TriangleMesh> MeshSpliter::toSubMesh(
   std::vector<Eigen::Vector3i> sub_mesh_triangles;
   std::vector<Eigen::Vector3d> sub_mesh_vertex_colors;
   std::unordered_map<int, int> vertex_idx_map;
-  int new_vertex_index = 0;
 
+  int new_vertex_index = 0;
   for (int i : sub_mesh_face_idx_set) {
-    const Eigen::Vector3i triangle = triangles[i];
+    const Eigen::Vector3i &triangle = triangles[i];
     Eigen::Vector3i new_triangle;
 
     for (int j = 0; j < 3; ++j) {
-      int vertex_index = triangle[j];
+      const int &vertex_index = triangle[j];
+
       if (vertex_idx_map.find(vertex_index) == vertex_idx_map.end()) {
-        vertex_idx_map[vertex_index] = new_vertex_index++;
+        vertex_idx_map[vertex_index] = new_vertex_index;
+        ++new_vertex_index;
+
         sub_mesh_vertices.push_back(vertices[vertex_index]);
+
         if (vertex_colors.size() == vertices.size()) {
           sub_mesh_vertex_colors.push_back(vertex_colors[vertex_index]);
         }
       }
+
       new_triangle[j] = vertex_idx_map[vertex_index];
     }
     sub_mesh_triangles.push_back(new_triangle);
@@ -130,8 +167,8 @@ const bool MeshSpliter::saveSubMeshes(
 
   for (auto it = sub_mesh_face_idx_set_map.begin();
        it != sub_mesh_face_idx_set_map.end(); ++it) {
-    const int sub_mesh_idx = it->first;
-    const std::set<int> sub_mesh_face_idx_set = it->second;
+    const int &sub_mesh_idx = it->first;
+    const std::set<int> &sub_mesh_face_idx_set = it->second;
 
     std::shared_ptr<open3d::geometry::TriangleMesh> sub_mesh_ptr =
         toSubMesh(mesh_ptr, sub_mesh_face_idx_set);
@@ -189,8 +226,28 @@ const bool MeshSpliter::autoSplitMesh(
     return false;
   }
 
-  if (!saveSubMeshes(mesh_ptr, sub_mesh_face_idx_set_map, save_folder_path,
-                     overwrite)) {
+  const int min_sub_mesh_face_num =
+      std::fmax(int(sub_mesh_face_idx_set_map.at(0).size() / 100.0), 1);
+
+  std::unordered_map<int, std::set<int>> simplified_sub_mesh_face_idx_set_map;
+
+  int new_sub_mesh_idx = 0;
+  for (int i = 0; i < sub_mesh_face_idx_set_map.size(); ++i) {
+    const std::set<int> &sub_mesh_face_idx_set =
+        sub_mesh_face_idx_set_map.at(i);
+
+    if (sub_mesh_face_idx_set.size() < min_sub_mesh_face_num) {
+      continue;
+    }
+
+    simplified_sub_mesh_face_idx_set_map[new_sub_mesh_idx] =
+        sub_mesh_face_idx_set;
+
+    ++new_sub_mesh_idx;
+  }
+
+  if (!saveSubMeshes(mesh_ptr, simplified_sub_mesh_face_idx_set_map,
+                     save_folder_path, overwrite)) {
     std::cerr << "[ERROR][MeshSpliter::autoSplitMesh]" << std::endl;
     std::cerr << "\t saveSubMeshes failed!" << std::endl;
     std::cerr << "\t mesh_file_path: " << mesh_file_path << std::endl;

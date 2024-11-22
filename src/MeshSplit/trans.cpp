@@ -1,7 +1,7 @@
 #include "MeshSplit/trans.h"
 
 TriMesh toOpenMesh(std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr) {
-  mesh_ptr->OrientTriangles();
+  // mesh_ptr->OrientTriangles();
 
   TriMesh mesh;
 
