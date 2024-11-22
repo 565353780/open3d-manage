@@ -2,7 +2,9 @@
 #include "MeshSplit/idx_curvature.h"
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <random>
 #include <unordered_map>
@@ -34,6 +36,8 @@ const bool SubMeshManager::loadMesh(
   o3d_mesh_ptr = mesh_ptr;
 
   mesh = toOpenMesh(mesh_ptr);
+  mesh.update_face_normals();
+
   vertex_set_idx_vec = std::vector<int>(mesh.n_vertices(), -1);
   face_set_idx_vec = std::vector<int>(mesh.n_faces(), -1);
 
@@ -50,6 +54,10 @@ const bool SubMeshManager::loadMeshFile(const std::string &mesh_file_path) {
 
     return false;
   }
+
+  std::cout << "start update_face_normals" << std::endl;
+  mesh.update_face_normals();
+  std::cout << "finish update_face_normals" << std::endl;
 
   o3d_mesh_ptr = std::make_shared<open3d::geometry::TriangleMesh>();
 
@@ -75,6 +83,25 @@ const bool SubMeshManager::loadMeshFile(const std::string &mesh_file_path) {
   face_set_idx_vec = std::vector<int>(mesh.n_faces(), -1);
 
   return true;
+}
+
+const float SubMeshManager::toFaceNormalAngle(const int &face_idx_1,
+                                              const int &face_idx_2) {
+  const OpenMesh::Vec3f normal_1 = mesh.normal(mesh.face_handle(face_idx_1));
+  const OpenMesh::Vec3f normal_2 = mesh.normal(mesh.face_handle(face_idx_2));
+
+  const float dot_product = OpenMesh::dot(normal_1, normal_2);
+
+  const float magnitude1 = normal_1.norm();
+  const float magnitude2 = normal_2.norm();
+
+  const float clamped_dot =
+      std::max(-1.0f, std::min(1.0f, dot_product / (magnitude1 * magnitude2)));
+  const float angle = std::acos(clamped_dot) * 180.0f / M_PI;
+
+  const float unique_angle = std::fmin(angle, 180.0f - angle);
+
+  return unique_angle;
 }
 
 const int SubMeshManager::getVertexSetIdx(const int &vertex_idx) {
@@ -269,12 +296,53 @@ const bool SubMeshManager::updateVertexNeighboorInfo(
   return true;
 }
 
+const bool SubMeshManager::updateFaceSetIdx(const int &face_idx,
+                                            const float &max_merge_angle) {
+  const int face_set_idx = getFaceSetIdx(face_idx);
+
+  if (face_set_idx != -1) {
+    return false;
+  }
+
+  float min_face_normal_angle = std::numeric_limits<float>().max();
+  int nearest_face_set_idx = -1;
+  for (TriMesh::FaceFaceIter ff_it = mesh.ff_iter(mesh.face_handle(face_idx));
+       ff_it.is_valid(); ++ff_it) {
+    const int neighboor_face_idx = ff_it->idx();
+
+    const int neighboor_face_set_idx = getFaceSetIdx(neighboor_face_idx);
+
+    if (neighboor_face_set_idx == -1) {
+      continue;
+    }
+
+    const float face_normal_angle =
+        toFaceNormalAngle(face_idx, neighboor_face_idx);
+
+    if (face_normal_angle < min_face_normal_angle) {
+      min_face_normal_angle = face_normal_angle;
+      nearest_face_set_idx = neighboor_face_set_idx;
+    }
+  }
+
+  if (min_face_normal_angle > max_merge_angle) {
+    return false;
+  }
+
+  face_set_idx_vec[face_idx] = nearest_face_set_idx;
+  sub_mesh_face_idx_set_map[nearest_face_set_idx].insert(face_idx);
+
+  return true;
+}
+
 const bool
 SubMeshManager::updateFaceNeighboorInfo(const int &face_idx,
                                         const float &max_merge_angle) {
-  // setSubMeshIdxForFaceVertices(face_idx);
-
   const int face_set_idx = getFaceSetIdx(face_idx);
+
+  if (face_set_idx == -1) {
+    return false;
+  }
 
   for (TriMesh::FaceFaceIter ff_it = mesh.ff_iter(mesh.face_handle(face_idx));
        ff_it.is_valid(); ++ff_it) {
@@ -287,10 +355,11 @@ SubMeshManager::updateFaceNeighboorInfo(const int &face_idx,
     }
 
     if (neighboor_face_set_idx != face_set_idx) {
-      const float face_diff_angle = 0.0f;
+      const float face_normal_angle =
+          toFaceNormalAngle(face_idx, neighboor_face_idx);
 
-      if (face_diff_angle <= max_merge_angle) {
-        mergeSubSet(face_set_idx, neighboor_face_idx);
+      if (face_normal_angle <= max_merge_angle) {
+        mergeSubSet(face_set_idx, neighboor_face_set_idx);
       }
     }
   }
@@ -344,9 +413,9 @@ const bool SubMeshManager::addConnectedFaceIntoSubSet(const int &face_idx) {
 
 const bool SubMeshManager::addFaceIntoSubSet(const int &face_idx,
                                              const float &max_merge_angle) {
-  const int face_set_idx = getFaceSetIdx(face_idx);
+  updateFaceSetIdx(face_idx, max_merge_angle);
 
-  if (face_set_idx == -1) {
+  if (getFaceSetIdx(face_idx) == -1) {
     addFaceIntoNewSubSet(face_idx);
   }
 

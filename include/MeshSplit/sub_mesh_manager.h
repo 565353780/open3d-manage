@@ -17,6 +17,8 @@ public:
 
   const bool loadMeshFile(const std::string &mesh_file_path);
 
+  const float toFaceNormalAngle(const int &face_idx_1, const int &face_idx_2);
+
   const int getVertexSetIdx(const int &vertex_idx);
 
   const int getFaceSetIdx(const int &face_idx);
@@ -45,6 +47,9 @@ public:
   updateVertexNeighboorInfo(const int &vertex_idx,
                             const std::vector<double> &curvatures_vec,
                             const float &max_merge_curvature);
+
+  const bool updateFaceSetIdx(const int &face_idx,
+                              const float &max_merge_angle);
 
   const bool updateFaceNeighboorInfo(const int &face_idx,
                                      const float &max_merge_angle);

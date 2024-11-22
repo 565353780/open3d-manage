@@ -207,6 +207,13 @@ const bool MeshSpliter::autoSplitMeshByFaceConnectivity(
     const std::string &save_folder_path,
     const std::string &save_painted_mesh_file_path, const bool &need_simplify,
     const bool &overwrite) {
+  if (!overwrite) {
+    if (std::filesystem::exists(save_folder_path) &&
+        std::filesystem::exists(save_painted_mesh_file_path)) {
+      return true;
+    }
+  }
+
   std::cout << "[INFO][MeshSpliter::autoSplitMeshByFaceConnectivity]"
             << std::endl;
   std::cout << "\t start splitMeshByFaceConnectivity..." << std::endl;
@@ -233,6 +240,13 @@ const bool MeshSpliter::autoSplitMeshByVertexCurvature(
     const std::string &save_folder_path, const float &max_merge_curvature,
     const std::string &save_painted_mesh_file_path, const bool &need_simplify,
     const bool &overwrite) {
+  if (!overwrite) {
+    if (std::filesystem::exists(save_folder_path) &&
+        std::filesystem::exists(save_painted_mesh_file_path)) {
+      return true;
+    }
+  }
+
   CurvatureEstimator curvature_estimator;
 
   std::cout << "[INFO][MeshSpliter::autoSplitMeshByVertexCurvature]"
@@ -279,6 +293,13 @@ const bool MeshSpliter::autoSplitMeshByFaceNormal(
     const std::string &save_folder_path, const float &max_merge_angle,
     const std::string &save_painted_mesh_file_path, const bool &need_simplify,
     const bool &overwrite) {
+  if (!overwrite) {
+    if (std::filesystem::exists(save_folder_path) &&
+        std::filesystem::exists(save_painted_mesh_file_path)) {
+      return true;
+    }
+  }
+
   std::cout << "[INFO][MeshSpliter::autoSplitMeshByFaceNormal]" << std::endl;
   std::cout << "\t start splitMeshByFaceNormal..." << std::endl;
   if (!splitMeshByFaceNormal(max_merge_angle, save_painted_mesh_file_path)) {
