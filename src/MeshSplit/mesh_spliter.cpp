@@ -1,12 +1,8 @@
 #include "MeshSplit/mesh_spliter.h"
 #include "Curvature/curvature_estimator.h"
 #include "Curvature/io.h"
-#include "Curvature/render.h"
-#include "MeshSplit/idx_curvature.h"
 #include "MeshSplit/sub_mesh_manager.h"
-#include <algorithm>
 #include <filesystem>
-#include <open3d/visualization/utility/DrawGeometry.h>
 #include <string>
 
 const std::unordered_map<int, std::set<int>> MeshSpliter::splitMeshByCurvature(
@@ -24,63 +20,10 @@ const std::unordered_map<int, std::set<int>> MeshSpliter::splitMeshByCurvature(
   std::vector<double> curvatures_vec(mesh_curvatures.data(),
                                      mesh_curvatures.data() + vertex_num);
 
-  std::vector<IdxCurvature> unused_curvatures;
-  unused_curvatures.reserve(vertex_num);
-
-  for (int i = 0; i < vertex_num; ++i) {
-    unused_curvatures.emplace_back(IdxCurvature(i, mesh_curvatures[i]));
-  }
-
-  std::sort(
-      unused_curvatures.begin(), unused_curvatures.end(),
-      [](IdxCurvature a, IdxCurvature b) { return a.curvature > b.curvature; });
-
   SubMeshManager sub_mesh_manager(mesh_ptr);
 
-  // 按照曲率从小到大逐点检查
-  while (!unused_curvatures.empty()) {
-    const IdxCurvature current_unused_idx_curvature = unused_curvatures.back();
-    unused_curvatures.pop_back();
-
-    const int &current_vertex_idx = current_unused_idx_curvature.idx;
-
-    sub_mesh_manager.addVertexIntoSubSet(current_vertex_idx, curvatures_vec,
-                                         max_merge_curvature);
-    continue;
-
-    for (TriMesh::VertexFaceIter vf_it = sub_mesh_manager.mesh.vf_iter(
-             sub_mesh_manager.mesh.vertex_handle(current_vertex_idx));
-         vf_it.is_valid(); ++vf_it) {
-
-      for (TriMesh::FaceVertexIter fv_it =
-               sub_mesh_manager.mesh.fv_iter(*vf_it);
-           fv_it.is_valid(); ++fv_it) {
-
-        for (TriMesh::VertexFaceIter fvf_it =
-                 sub_mesh_manager.mesh.vf_iter(*fv_it);
-             fvf_it.is_valid(); ++fvf_it) {
-
-          for (TriMesh::FaceVertexIter fvfv_it =
-                   sub_mesh_manager.mesh.fv_iter(*fvf_it);
-               fvfv_it.is_valid(); ++fvfv_it) {
-            const int neighboor_vertex_idx = fvfv_it->idx();
-
-            sub_mesh_manager.addVertexIntoSubSet(
-                neighboor_vertex_idx, curvatures_vec, max_merge_curvature);
-            break;
-          }
-          break;
-        }
-        break;
-      }
-      break;
-    }
-    break;
-  }
-
-  sub_mesh_manager.sortSubMeshIdxSetMap();
-
-  // sub_mesh_manager.checkSubMeshState();
+  sub_mesh_manager.toSubMeshesByVertexCurvature(curvatures_vec,
+                                                max_merge_curvature);
 
   if (save_painted_mesh_file_path != "") {
     const std::string save_painted_mesh_folder_path =

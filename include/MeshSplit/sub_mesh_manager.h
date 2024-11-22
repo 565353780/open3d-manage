@@ -44,11 +44,19 @@ public:
                                  const std::vector<double> &curvatures_vec,
                                  const float &max_merge_curvature);
 
+  const bool addFaceIntoSubSet(const int &face_idx,
+                               const float &max_merge_angle);
+
   const bool sortSubMeshIdxSetMap();
 
   const std::vector<int> toUnusedFaceIdxVec();
 
   const bool checkSubMeshState();
+
+  // outer function algo 1
+  const bool
+  toSubMeshesByVertexCurvature(const std::vector<double> &curvatures_vec,
+                               const float &max_merge_curvature);
 
   const bool paintFaceVertices(const int &face_idx,
                                const Eigen::Vector3d &color);
