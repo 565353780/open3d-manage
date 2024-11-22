@@ -8,10 +8,14 @@ public:
 
   SubMeshManager(std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr);
 
+  SubMeshManager(const std::string &mesh_file_path);
+
   const bool reset();
 
   const bool
   loadMesh(std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr);
+
+  const bool loadMeshFile(const std::string &mesh_file_path);
 
   const int getVertexSetIdx(const int &vertex_idx);
 
@@ -29,6 +33,8 @@ public:
 
   const bool addVertexIntoNewSubSet(const int &vertex_idx);
 
+  const bool addFaceIntoNewSubSet(const int &face_idx);
+
   const bool mergeSubSet(const int &set_idx_1, const int &set_idx_2);
 
   const bool updateConflictFaceSetIdx(const int &face_idx,
@@ -40,9 +46,14 @@ public:
                             const std::vector<double> &curvatures_vec,
                             const float &max_merge_curvature);
 
+  const bool updateFaceNeighboorInfo(const int &face_idx,
+                                     const float &max_merge_angle);
+
   const bool addVertexIntoSubSet(const int &vertex_idx,
                                  const std::vector<double> &curvatures_vec,
                                  const float &max_merge_curvature);
+
+  const bool addConnectedFaceIntoSubSet(const int &face_idx);
 
   const bool addFaceIntoSubSet(const int &face_idx,
                                const float &max_merge_angle);
@@ -54,9 +65,15 @@ public:
   const bool checkSubMeshState();
 
   // outer function algo 1
+  const bool toSubMeshesByFaceConnectivity();
+
+  // outer function algo 2
   const bool
   toSubMeshesByVertexCurvature(const std::vector<double> &curvatures_vec,
                                const float &max_merge_curvature);
+
+  // outer function algo 3
+  const bool toSubMeshesByFaceNormal(const float &max_merge_angle);
 
   const bool paintFaceVertices(const int &face_idx,
                                const Eigen::Vector3d &color);

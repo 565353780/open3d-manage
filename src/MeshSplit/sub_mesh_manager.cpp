@@ -1,5 +1,6 @@
 #include "MeshSplit/sub_mesh_manager.h"
 #include "MeshSplit/idx_curvature.h"
+#include <OpenMesh/Core/IO/MeshIO.hh>
 #include <algorithm>
 #include <filesystem>
 #include <memory>
@@ -9,6 +10,10 @@
 SubMeshManager::SubMeshManager(
     std::shared_ptr<open3d::geometry::TriangleMesh> &mesh_ptr) {
   loadMesh(mesh_ptr);
+}
+
+SubMeshManager::SubMeshManager(const std::string &mesh_file_path) {
+  loadMeshFile(mesh_file_path);
 }
 
 const bool SubMeshManager::reset() {
@@ -29,6 +34,43 @@ const bool SubMeshManager::loadMesh(
   o3d_mesh_ptr = mesh_ptr;
 
   mesh = toOpenMesh(mesh_ptr);
+  vertex_set_idx_vec = std::vector<int>(mesh.n_vertices(), -1);
+  face_set_idx_vec = std::vector<int>(mesh.n_faces(), -1);
+
+  return true;
+}
+
+const bool SubMeshManager::loadMeshFile(const std::string &mesh_file_path) {
+  reset();
+
+  if (!OpenMesh::IO::read_mesh(mesh, mesh_file_path)) {
+    std::cerr << "[ERROR][SubMeshManager::loadMeshFile]" << std::endl;
+    std::cerr << "\t read_mesh failed!" << std::endl;
+    std::cerr << "\t mesh_file_path: " << mesh_file_path << std::endl;
+
+    return false;
+  }
+
+  o3d_mesh_ptr = std::make_shared<open3d::geometry::TriangleMesh>();
+
+  o3d_mesh_ptr->vertices_.reserve(mesh.n_vertices());
+  for (auto v_it = mesh.vertices_begin(); v_it != mesh.vertices_end(); ++v_it) {
+    auto point = mesh.point(*v_it);
+    o3d_mesh_ptr->vertices_.emplace_back(point[0], point[1], point[2]);
+  }
+
+  o3d_mesh_ptr->triangles_.reserve(mesh.n_faces());
+  for (auto f_it = mesh.faces_begin(); f_it != mesh.faces_end(); ++f_it) {
+    std::vector<int> face_indices;
+    for (auto fv_it = mesh.fv_iter(*f_it); fv_it.is_valid(); ++fv_it) {
+      face_indices.push_back(fv_it->idx());
+    }
+    if (face_indices.size() == 3) {
+      o3d_mesh_ptr->triangles_.emplace_back(face_indices[0], face_indices[1],
+                                            face_indices[2]);
+    }
+  }
+
   vertex_set_idx_vec = std::vector<int>(mesh.n_vertices(), -1);
   face_set_idx_vec = std::vector<int>(mesh.n_faces(), -1);
 
@@ -124,6 +166,15 @@ const bool SubMeshManager::addVertexIntoNewSubSet(const int &vertex_idx) {
   return true;
 }
 
+const bool SubMeshManager::addFaceIntoNewSubSet(const int &face_idx) {
+  createNewSubSet();
+
+  face_set_idx_vec[face_idx] = new_sub_set_idx;
+  sub_mesh_face_idx_set_map[new_sub_set_idx].insert(face_idx);
+
+  return true;
+}
+
 const bool SubMeshManager::mergeSubSet(const int &set_idx_1,
                                        const int &set_idx_2) {
   if (set_idx_1 == set_idx_2) {
@@ -195,27 +246,51 @@ const bool SubMeshManager::updateVertexNeighboorInfo(
 
   const int vertex_set_idx = getVertexSetIdx(vertex_idx);
 
-  for (TriMesh::VertexFaceIter vf_it =
-           mesh.vf_iter(mesh.vertex_handle(vertex_idx));
-       vf_it.is_valid(); ++vf_it) {
+  for (TriMesh::VertexVertexIter vv_it =
+           mesh.vv_iter(mesh.vertex_handle(vertex_idx));
+       vv_it.is_valid(); ++vv_it) {
+    const int neighboor_vertex_idx = vv_it->idx();
 
-    for (TriMesh::FaceVertexIter fv_it = mesh.fv_iter(*vf_it); fv_it.is_valid();
-         ++fv_it) {
-      const int neighboor_vertex_idx = fv_it->idx();
+    const int neighboor_vertex_set_idx = getVertexSetIdx(neighboor_vertex_idx);
 
-      const int neighboor_vertex_set_idx =
-          getVertexSetIdx(neighboor_vertex_idx);
-
-      if (neighboor_vertex_set_idx != vertex_set_idx) {
-        if (curvatures_vec[neighboor_vertex_idx] <= max_merge_curvature) {
-          mergeSubSet(vertex_set_idx, neighboor_vertex_set_idx);
-        }
+    if (neighboor_vertex_set_idx != vertex_set_idx) {
+      if (curvatures_vec[neighboor_vertex_idx] <= max_merge_curvature) {
+        mergeSubSet(vertex_set_idx, neighboor_vertex_set_idx);
       }
+    }
 
-      for (TriMesh::VertexFaceIter fvf_it = mesh.vf_iter(*fv_it);
-           fvf_it.is_valid(); ++fvf_it) {
-        updateConflictFaceSetIdx(fvf_it->idx(), curvatures_vec,
-                                 max_merge_curvature);
+    for (TriMesh::VertexFaceIter vvf_it = mesh.vf_iter(*vv_it);
+         vvf_it.is_valid(); ++vvf_it) {
+      updateConflictFaceSetIdx(vvf_it->idx(), curvatures_vec,
+                               max_merge_curvature);
+    }
+  }
+
+  return true;
+}
+
+const bool
+SubMeshManager::updateFaceNeighboorInfo(const int &face_idx,
+                                        const float &max_merge_angle) {
+  // setSubMeshIdxForFaceVertices(face_idx);
+
+  const int face_set_idx = getFaceSetIdx(face_idx);
+
+  for (TriMesh::FaceFaceIter ff_it = mesh.ff_iter(mesh.face_handle(face_idx));
+       ff_it.is_valid(); ++ff_it) {
+    const int neighboor_face_idx = ff_it->idx();
+
+    const int neighboor_face_set_idx = getFaceSetIdx(neighboor_face_idx);
+
+    if (neighboor_face_set_idx == -1) {
+      continue;
+    }
+
+    if (neighboor_face_set_idx != face_set_idx) {
+      const float face_diff_angle = 0.0f;
+
+      if (face_diff_angle <= max_merge_angle) {
+        mergeSubSet(face_set_idx, neighboor_face_idx);
       }
     }
   }
@@ -234,6 +309,48 @@ SubMeshManager::addVertexIntoSubSet(const int &vertex_idx,
   }
 
   updateVertexNeighboorInfo(vertex_idx, curvatures_vec, max_merge_curvature);
+
+  return true;
+}
+
+const bool SubMeshManager::addConnectedFaceIntoSubSet(const int &face_idx) {
+  int face_set_idx = getFaceSetIdx(face_idx);
+
+  if (face_set_idx == -1) {
+    addFaceIntoNewSubSet(face_idx);
+  }
+
+  face_set_idx = getFaceSetIdx(face_idx);
+
+  std::vector<int> iter_face_idx_vec;
+  for (TriMesh::FaceFaceIter ff_it = mesh.ff_iter(mesh.face_handle(face_idx));
+       ff_it.is_valid(); ++ff_it) {
+    const int neighboor_face_idx = ff_it->idx();
+
+    if (face_set_idx_vec[neighboor_face_idx] == -1) {
+      face_set_idx_vec[neighboor_face_idx] = face_set_idx;
+      sub_mesh_face_idx_set_map[face_set_idx].insert(neighboor_face_idx);
+
+      iter_face_idx_vec.emplace_back(neighboor_face_idx);
+    }
+  }
+
+  for (int iter_face_idx : iter_face_idx_vec) {
+    addConnectedFaceIntoSubSet(iter_face_idx);
+  }
+
+  return true;
+}
+
+const bool SubMeshManager::addFaceIntoSubSet(const int &face_idx,
+                                             const float &max_merge_angle) {
+  const int face_set_idx = getFaceSetIdx(face_idx);
+
+  if (face_set_idx == -1) {
+    addFaceIntoNewSubSet(face_idx);
+  }
+
+  updateFaceNeighboorInfo(face_idx, max_merge_angle);
 
   return true;
 }
@@ -303,28 +420,30 @@ const bool SubMeshManager::checkSubMeshState() {
   std::cout << "CHECK unused face idx num = " << unused_face_idx_vec.size()
             << " / " << o3d_mesh_ptr->triangles_.size() << std::endl;
 
-  for (int i = 0; i < face_set_idx_vec.size(); ++i) {
-    const int face_set_idx = face_set_idx_vec[i];
+  if (std::any_of(vertex_set_idx_vec.begin(), vertex_set_idx_vec.end(),
+                  [](int x) { return x != -1; })) {
+    for (int i = 0; i < face_set_idx_vec.size(); ++i) {
+      const int face_set_idx = face_set_idx_vec[i];
 
-    std::vector<int> v_set_idx_vec;
-    bool error = true;
-    for (TriMesh::FaceVertexIter fv_it = mesh.fv_iter(mesh.face_handle(i));
-         fv_it.is_valid(); ++fv_it) {
-      v_set_idx_vec.push_back(vertex_set_idx_vec[fv_it->idx()]);
+      std::vector<int> v_set_idx_vec;
+      bool error = true;
+      for (TriMesh::FaceVertexIter fv_it = mesh.fv_iter(mesh.face_handle(i));
+           fv_it.is_valid(); ++fv_it) {
+        v_set_idx_vec.push_back(vertex_set_idx_vec[fv_it->idx()]);
 
-      if (v_set_idx_vec.back() == face_set_idx) {
-        error = false;
+        if (v_set_idx_vec.back() == face_set_idx) {
+          error = false;
+        }
       }
-    }
 
-    if (error) {
-      std::cout << "ERROR face: " << v_set_idx_vec[0] << ", "
-                << v_set_idx_vec[1] << ", " << v_set_idx_vec[2] << " -> "
-                << face_set_idx << std::endl;
+      if (error) {
+        std::cout << "ERROR face: " << v_set_idx_vec[0] << ", "
+                  << v_set_idx_vec[1] << ", " << v_set_idx_vec[2] << " -> "
+                  << face_set_idx << std::endl;
+      }
     }
   }
 
-  return true;
   std::cout << "CHECK sub set face num = " << std::endl;
   for (auto it = sub_mesh_face_idx_set_map.begin();
        it != sub_mesh_face_idx_set_map.end(); ++it) {
@@ -333,6 +452,22 @@ const bool SubMeshManager::checkSubMeshState() {
     std::cout << sub_mesh_idx << " -> " << sub_mesh_face_idx_set.size()
               << std::endl;
   }
+
+  return true;
+}
+
+const bool SubMeshManager::toSubMeshesByFaceConnectivity() {
+  for (int i = 0; i < mesh.n_faces(); ++i) {
+    if (getFaceSetIdx(i) != -1) {
+      continue;
+    }
+
+    addConnectedFaceIntoSubSet(i);
+  }
+
+  sortSubMeshIdxSetMap();
+
+  // checkSubMeshState();
 
   return true;
 }
@@ -364,7 +499,20 @@ const bool SubMeshManager::toSubMeshesByVertexCurvature(
 
   sortSubMeshIdxSetMap();
 
-  // sub_mesh_manager.checkSubMeshState();
+  // checkSubMeshState();
+
+  return true;
+}
+
+const bool
+SubMeshManager::toSubMeshesByFaceNormal(const float &max_merge_angle) {
+  for (int i = 0; i < mesh.n_faces(); ++i) {
+    addFaceIntoSubSet(i, max_merge_angle);
+  }
+
+  sortSubMeshIdxSetMap();
+
+  // checkSubMeshState();
 
   return true;
 }
