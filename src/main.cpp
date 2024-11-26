@@ -114,7 +114,7 @@ int estimateCurvature() {
     return -1;
   }
 
-  paintMeshCurvature(mesh_ptr, mesh_curvatures);
+  renderMeshCurvature(mesh_ptr, mesh_curvatures);
 
   std::shared_ptr<open3d::geometry::PointCloud> pcd_ptr =
       loadPcdFile(pcd_file_path);
@@ -147,14 +147,17 @@ int splitMesh() {
   mesh_file_path =
       "/home/chli/Dataset/AMCAX/ManifoldMesh/ShapeNet-Crop/02691156/"
       "105f7f51e4140ee4b6b87e72ead132ed-crop.obj";
-  const int max_merge_curvature = 2000.0;
+  const int max_merge_thresh = 10.0;
   const std::string save_folder_path = "./output/sub_meshes/";
+  const std::string save_painted_mesh_file_path = "./output/painted_mesh.ply";
+  const bool need_simplify = true;
   const bool overwrite = true;
 
-  MeshSpliter mesh_spliter;
+  MeshSpliter mesh_spliter(mesh_file_path);
 
-  if (!mesh_spliter.autoSplitMesh(mesh_file_path, save_folder_path,
-                                  max_merge_curvature, overwrite)) {
+  if (!mesh_spliter.autoSplitMeshByFaceNormal(
+          save_folder_path, max_merge_thresh, save_painted_mesh_file_path,
+          need_simplify, overwrite)) {
     std::cerr << "[ERROR][main::splitMesh]" << std::endl;
     std::cerr << "\t autoSplitMesh failed!" << std::endl;
     return -1;
