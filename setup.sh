@@ -4,7 +4,7 @@ elif [ "$(uname)" = "Linux" ]; then
   pip install -U open3d
 fi
 
-sudo apt install libcgal-dev -y
+sudo apt install libc++-dev libc++abi-dev libcgal-dev -y
 
 pip install -U numpy tqdm gradio plotly opencv-python
 
