@@ -11,6 +11,11 @@ public:
   MeshSpliter(const std::string &mesh_file_path);
 
   const bool
+  splitMeshByFacePcdDistance(const std::string &pcd_file_path,
+                             const std::vector<float> &max_distance_vec,
+                             const std::string &save_painted_mesh_file_path);
+
+  const bool
   splitMeshByFaceConnectivity(const std::string &save_painted_mesh_file_path);
 
   const bool splitMeshByVertexCurvature(
@@ -32,6 +37,12 @@ public:
 
   const std::unordered_map<int, std::set<int>>
   toSimplifiedSubMeshFaceIdxSetMap();
+
+  const bool autoSplitMeshByFacePcdDistance(
+      const std::string &save_folder_path, const std::string &pcd_file_path,
+      const std::vector<float> &max_distance_vec,
+      const std::string &save_painted_mesh_file_path = "",
+      const bool &need_simplify = false, const bool &overwrite = false);
 
   const bool autoSplitMeshByFaceConnectivity(
       const std::string &save_folder_path,

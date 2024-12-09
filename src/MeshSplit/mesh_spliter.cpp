@@ -7,6 +7,31 @@ MeshSpliter::MeshSpliter(const std::string &mesh_file_path) {
   sub_mesh_manager_.loadMeshFile(mesh_file_path);
 }
 
+const bool MeshSpliter::splitMeshByFacePcdDistance(
+    const std::string &pcd_file_path,
+    const std::vector<float> &max_distance_vec,
+    const std::string &save_painted_mesh_file_path) {
+  sub_mesh_manager_.toSubMeshesByFacePcdDistance(pcd_file_path,
+                                                 max_distance_vec);
+
+  if (save_painted_mesh_file_path != "") {
+    const std::string save_painted_mesh_folder_path =
+        std::filesystem::path(save_painted_mesh_file_path)
+            .parent_path()
+            .string();
+
+    if (!std::filesystem::exists(save_painted_mesh_folder_path)) {
+      std::filesystem::create_directories(save_painted_mesh_folder_path);
+    }
+
+    sub_mesh_manager_.paintSubMesh();
+    // sub_mesh_manager_.renderSubMeshes();
+    sub_mesh_manager_.savePaintedMesh(save_painted_mesh_file_path, true);
+  }
+
+  return true;
+}
+
 const bool MeshSpliter::splitMeshByFaceConnectivity(
     const std::string &save_painted_mesh_file_path) {
   sub_mesh_manager_.toSubMeshesByFaceConnectivity();
@@ -201,6 +226,41 @@ MeshSpliter::toSimplifiedSubMeshFaceIdxSetMap() {
   }
 
   return simplified_sub_mesh_face_idx_set_map;
+}
+
+const bool MeshSpliter::autoSplitMeshByFacePcdDistance(
+    const std::string &save_folder_path, const std::string &pcd_file_path,
+    const std::vector<float> &max_distance_vec,
+    const std::string &save_painted_mesh_file_path, const bool &need_simplify,
+    const bool &overwrite) {
+  if (!overwrite) {
+    if (std::filesystem::exists(save_folder_path) &&
+        std::filesystem::exists(save_painted_mesh_file_path)) {
+      return true;
+    }
+  }
+
+  std::cout << "[INFO][MeshSpliter::autoSplitMeshByFacePcdDistance]"
+            << std::endl;
+  std::cout << "\t start autoSplitMeshByFacePcdDistance..." << std::endl;
+  if (!splitMeshByFacePcdDistance(pcd_file_path, max_distance_vec,
+                                  save_painted_mesh_file_path)) {
+    std::cerr << "[ERROR][MeshSpliter::autoSplitMeshByFacePcdDistance]"
+              << std::endl;
+    std::cerr << "\t splitMeshByFacePcdDistance failed!" << std::endl;
+
+    return false;
+  }
+
+  if (!saveSubMeshes(save_folder_path, need_simplify, overwrite)) {
+    std::cerr << "[ERROR][MeshSpliter::autoSplitMeshByFacePcdDistance]"
+              << std::endl;
+    std::cerr << "\t saveSubMeshes failed!" << std::endl;
+    std::cerr << "\t save_folder_path: " << save_folder_path << std::endl;
+    return false;
+  }
+
+  return true;
 }
 
 const bool MeshSpliter::autoSplitMeshByFaceConnectivity(

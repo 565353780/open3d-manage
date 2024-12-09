@@ -24,6 +24,9 @@ const bool toMeshVertexPcdDistanceVec(
     return false;
   }
 
+  const auto aabb = pcd.GetAxisAlignedBoundingBox();
+  const float scale = 1.0 / (aabb.max_bound_ - aabb.min_bound_).maxCoeff();
+
   open3d::geometry::KDTreeFlann kdtree;
   kdtree.SetGeometry(pcd);
 
@@ -36,7 +39,7 @@ const bool toMeshVertexPcdDistanceVec(
     std::vector<double> distances(1);
 
     if (kdtree.SearchKNN(point, 1, indices, distances) > 0) {
-      vertex_pcd_distance_vec[i] = float(std::sqrt(distances[0]));
+      vertex_pcd_distance_vec[i] = scale * float(std::sqrt(distances[0]));
     }
   }
 
