@@ -1,4 +1,5 @@
 #include "MeshSplit/sub_mesh_manager.h"
+#include "MeshSplit/distance.h"
 #include "MeshSplit/idx_curvature.h"
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <algorithm>
@@ -55,9 +56,7 @@ const bool SubMeshManager::loadMeshFile(const std::string &mesh_file_path) {
     return false;
   }
 
-  std::cout << "start update_face_normals" << std::endl;
   mesh.update_face_normals();
-  std::cout << "finish update_face_normals" << std::endl;
 
   o3d_mesh_ptr = std::make_shared<open3d::geometry::TriangleMesh>();
 
@@ -382,6 +381,43 @@ SubMeshManager::addVertexIntoSubSet(const int &vertex_idx,
   return true;
 }
 
+const bool SubMeshManager::addDistanceFaceIntoSubSet(
+    const int &face_idx, const std::vector<float> &vertex_pcd_distance_vec,
+    const std::vector<float> &max_distance_level_vec) {
+
+  std::vector<float> face_vertex_pcd_distance_vec;
+
+  for (TriMesh::FaceVertexIter fv_it = mesh.fv_iter(mesh.face_handle(face_idx));
+       fv_it.is_valid(); ++fv_it) {
+    const int vertex_idx = fv_it->idx();
+
+    face_vertex_pcd_distance_vec.emplace_back(
+        vertex_pcd_distance_vec[vertex_idx]);
+  }
+
+  int face_level = max_distance_level_vec.size();
+
+  if (!face_vertex_pcd_distance_vec.empty()) {
+    auto max_iter = std::max_element(face_vertex_pcd_distance_vec.begin(),
+                                     face_vertex_pcd_distance_vec.end());
+
+    const float max_face_pcd_distance = *max_iter;
+
+    auto it =
+        std::lower_bound(max_distance_level_vec.begin(),
+                         max_distance_level_vec.end(), max_face_pcd_distance);
+
+    if (it != max_distance_level_vec.end()) {
+      face_level = it - max_distance_level_vec.begin();
+    }
+  }
+
+  face_set_idx_vec[face_idx] = face_level;
+  sub_mesh_face_idx_set_map[face_level].insert(face_idx);
+
+  return true;
+}
+
 const bool SubMeshManager::addConnectedFaceIntoSubSet(const int &face_idx) {
   int face_set_idx = getFaceSetIdx(face_idx);
 
@@ -521,6 +557,36 @@ const bool SubMeshManager::checkSubMeshState() {
     std::cout << sub_mesh_idx << " -> " << sub_mesh_face_idx_set.size()
               << std::endl;
   }
+
+  return true;
+}
+
+const bool SubMeshManager::toSubMeshesByFacePcdDistance(
+    const std::string &pcd_file_path,
+    const std::vector<float> &max_distance_level_vec) {
+  std::vector<float> vertex_pcd_distance_vec;
+
+  if (!toMeshVertexPcdDistanceVec(o3d_mesh_ptr, pcd_file_path,
+                                  vertex_pcd_distance_vec)) {
+    std::cerr << "[ERROR][SubMeshManager::toSubMeshesByFacePcdDistance]"
+              << std::endl;
+    std::cerr << "\t toMeshVertexPcdDistanceVec failed!" << std::endl;
+
+    return false;
+  }
+
+  while (new_sub_set_idx < max_distance_level_vec.size()) {
+    createNewSubSet();
+  }
+
+  for (int i = 0; i < mesh.n_faces(); ++i) {
+    addDistanceFaceIntoSubSet(i, vertex_pcd_distance_vec,
+                              max_distance_level_vec);
+  }
+
+  sortSubMeshIdxSetMap();
+
+  // checkSubMeshState();
 
   return true;
 }

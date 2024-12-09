@@ -58,6 +58,11 @@ public:
                                  const std::vector<double> &curvatures_vec,
                                  const float &max_merge_curvature);
 
+  const bool
+  addDistanceFaceIntoSubSet(const int &face_idx,
+                            const std::vector<float> &vertex_pcd_distance_vec,
+                            const std::vector<float> &max_distance_level_vec);
+
   const bool addConnectedFaceIntoSubSet(const int &face_idx);
 
   const bool addFaceIntoSubSet(const int &face_idx,
@@ -68,6 +73,11 @@ public:
   const std::vector<int> toUnusedFaceIdxVec();
 
   const bool checkSubMeshState();
+
+  // outer function algo 1
+  const bool toSubMeshesByFacePcdDistance(
+      const std::string &pcd_file_path,
+      const std::vector<float> &max_distance_level_vec);
 
   // outer function algo 1
   const bool toSubMeshesByFaceConnectivity();
