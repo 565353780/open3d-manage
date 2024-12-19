@@ -30,7 +30,7 @@ if (Open3D_FOUND)
 endif()
 
 # openmp
-find_package(OpenMP REQUIRED)
+find_package(OpenMP REQUIRED COMPONENTS C CXX)
 
 # Find the CGAL library
 find_package(CGAL REQUIRED)
